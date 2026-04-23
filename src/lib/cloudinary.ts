@@ -5,28 +5,28 @@
  * Next.js's bundler cannot resolve named ES-module imports from it.
  * "cloudinary" is listed in serverExternalPackages so it is never bundled.
  *
- * - Images        → resource_type "image"
- * - Video / Audio → resource_type "video"
- * - PDFs, Word    → resource_type "raw"  (served as-is, no conversion)
- *
- * Files are organised under:  brainhistory/{userId}/{contentId}
+ * Config is applied lazily inside each function (not at module load time)
+ * because Next.js env vars are not guaranteed to be present when the module
+ * is first required during the build/startup phase.
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 
 type ResourceType = "image" | "video" | "raw" | "auto";
-
-// Access v2 via require to avoid CJS/ESM named-export resolution failures
 type CloudinaryV2 = typeof import("cloudinary").v2;
-const cloudinary: CloudinaryV2 = (require("cloudinary") as { v2: CloudinaryV2 }).v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure:     true,
-});
+/** Returns a fully-configured Cloudinary v2 instance. */
+function getCloudinary(): CloudinaryV2 {
+  const cld = (require("cloudinary") as { v2: CloudinaryV2 }).v2;
+  cld.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure:     true,
+  });
+  return cld;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ cloudinary.config({
 export function getResourceType(mime: string): ResourceType {
   if (mime.startsWith("image/"))                               return "image";
   if (mime.startsWith("video/") || mime.startsWith("audio/")) return "video";
-  return "raw";   // PDFs, Word docs, etc.
+  return "raw";
 }
 
 /**
@@ -55,6 +55,7 @@ export function uploadToCloudinary(
     originalFilename: string;
   }
 ): Promise<UploadApiResponse> {
+  const cloudinary = getCloudinary();
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -85,26 +86,25 @@ export async function deleteFromCloudinary(
   publicId:     string,
   resourceType: ResourceType
 ): Promise<void> {
+  const cloudinary = getCloudinary();
   await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 }
 
 /**
  * Build a thumbnail URL from a Cloudinary secure_url using transformations.
  *
- * Images → resized + cropped version of the image itself
+ * Images → resized + cropped version of the image itself (no extra API call)
  * Videos → auto-captured first-frame JPEG thumbnail
- * Others → undefined (no thumbnail)
+ * Others → undefined
  */
 export function makeThumbnailUrl(secureUrl: string, mime: string): string | undefined {
   if (mime.startsWith("image/")) {
-    // Insert resize transformation after /image/upload/
     return secureUrl.replace(
       "/image/upload/",
       "/image/upload/w_600,h_300,c_fill,f_auto,q_auto/"
     );
   }
   if (mime.startsWith("video/")) {
-    // Capture frame at 0s, resize, convert to JPEG
     return secureUrl
       .replace("/video/upload/", "/video/upload/so_0,w_600,h_300,c_fill,f_jpg,q_auto/")
       .replace(/\.[^.]+$/, ".jpg");
@@ -113,13 +113,11 @@ export function makeThumbnailUrl(secureUrl: string, mime: string): string | unde
 }
 
 /**
- * Build a download URL from a Cloudinary secure_url by injecting fl_attachment.
+ * Build a download URL by injecting fl_attachment into a Cloudinary URL.
  *
- * Original:  https://res.cloudinary.com/{cloud}/{type}/upload/v123/{public_id}
- * Download:  https://res.cloudinary.com/{cloud}/{type}/upload/fl_attachment/v123/{public_id}
+ * Original:  …/upload/v123/{public_id}
+ * Download:  …/upload/fl_attachment/v123/{public_id}
  */
 export function makeDownloadUrl(secureUrl: string): string {
   return secureUrl.replace("/upload/", "/upload/fl_attachment/");
 }
-
-export { cloudinary };
