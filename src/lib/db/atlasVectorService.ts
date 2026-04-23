@@ -41,6 +41,7 @@ export interface UpsertOptions {
   platform:    string;
   title:       string;
   url:         string;
+  fileUrl?:    string;   // Cloudinary URL — stored in every chunk for retrieval
   thumbnail?:  string;
   savedAt:     Date;
   chunks:      UpsertChunk[];
@@ -70,6 +71,7 @@ export async function upsertVectors(opts: UpsertOptions): Promise<void> {
       platform:    opts.platform,
       title:       opts.title,
       url:         opts.url,
+      fileUrl:     opts.fileUrl,
       pageNumber:  chunk.pageNumber,
     },
   }));
@@ -101,6 +103,7 @@ export interface QueryResult {
   platform:    string;
   title:       string;
   url:         string;
+  fileUrl?:    string;          // Cloudinary URL if content was uploaded
 }
 
 export async function queryVectors(opts: QueryOptions): Promise<QueryResult[]> {
@@ -148,7 +151,7 @@ export async function queryVectors(opts: QueryOptions): Promise<QueryResult[]> {
     chunkIndex: number;
     chunkText:  string;
     contentId:  mongoose.Types.ObjectId;
-    chunkMeta:  { contentType: string; platform: string; title: string; url: string; pageNumber?: number };
+    chunkMeta:  { contentType: string; platform: string; title: string; url: string; fileUrl?: string; pageNumber?: number };
     score:      number;
   }>;
 
@@ -163,6 +166,7 @@ export async function queryVectors(opts: QueryOptions): Promise<QueryResult[]> {
     platform:    r.chunkMeta.platform,
     title:       r.chunkMeta.title,
     url:         r.chunkMeta.url,
+    fileUrl:     r.chunkMeta.fileUrl,
   }));
 }
 

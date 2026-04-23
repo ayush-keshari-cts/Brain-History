@@ -89,6 +89,30 @@ export async function deleteFromCloudinary(
 }
 
 /**
+ * Build a thumbnail URL from a Cloudinary secure_url using transformations.
+ *
+ * Images → resized + cropped version of the image itself
+ * Videos → auto-captured first-frame JPEG thumbnail
+ * Others → undefined (no thumbnail)
+ */
+export function makeThumbnailUrl(secureUrl: string, mime: string): string | undefined {
+  if (mime.startsWith("image/")) {
+    // Insert resize transformation after /image/upload/
+    return secureUrl.replace(
+      "/image/upload/",
+      "/image/upload/w_600,h_300,c_fill,f_auto,q_auto/"
+    );
+  }
+  if (mime.startsWith("video/")) {
+    // Capture frame at 0s, resize, convert to JPEG
+    return secureUrl
+      .replace("/video/upload/", "/video/upload/so_0,w_600,h_300,c_fill,f_jpg,q_auto/")
+      .replace(/\.[^.]+$/, ".jpg");
+  }
+  return undefined;
+}
+
+/**
  * Build a download URL from a Cloudinary secure_url by injecting fl_attachment.
  *
  * Original:  https://res.cloudinary.com/{cloud}/{type}/upload/v123/{public_id}

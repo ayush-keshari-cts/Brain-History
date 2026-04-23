@@ -142,6 +142,7 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
         contentType:      body.contentType ?? "unknown",
         platform:         "upload",
         title:            body.title ?? file.name,
+        thumbnail:        body.thumbnail,
         savedAt:          new Date().toISOString(),
         processingStatus: "pending",
         contentSize:      body.isLarge ? "large" : "small",

@@ -69,7 +69,7 @@ export class EmbeddingService {
   async indexContent(
     contentId: mongoose.Types.ObjectId,
     userId:    mongoose.Types.ObjectId,
-    extracted: ExtractedContent & { platform?: string; thumbnail?: string; savedAt?: Date }
+    extracted: ExtractedContent & { platform?: string; thumbnail?: string; savedAt?: Date; fileUrl?: string }
   ): Promise<void> {
     await connectDB();
 
@@ -104,6 +104,7 @@ export class EmbeddingService {
         platform:    extracted.platform ?? "unknown",
         title:       extracted.title,
         url:         extracted.url,
+        fileUrl:     extracted.fileUrl,
         thumbnail:   extracted.thumbnail,
         savedAt:     extracted.savedAt ?? new Date(),
         chunks: chunks.map((chunk, i) => ({

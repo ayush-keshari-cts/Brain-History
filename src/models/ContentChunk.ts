@@ -47,9 +47,10 @@ export interface IContentChunk extends Document {
   /** Extra metadata passed through to the vector store for filtering */
   chunkMeta: {
     contentType: string;
-    platform: string;
-    title: string;
-    url: string;
+    platform:    string;
+    title:       string;
+    url:         string;
+    fileUrl?:    string;   // Cloudinary URL for uploaded media (image/video/audio/PDF)
     pageNumber?: number;   // useful for PDFs
   };
 
@@ -86,6 +87,7 @@ const ContentChunkSchema = new Schema<IContentChunk>(
       platform:    { type: String, required: true },
       title:       { type: String, required: true },
       url:         { type: String, required: true },
+      fileUrl:     String,
       pageNumber:  Number,
     },
   },
