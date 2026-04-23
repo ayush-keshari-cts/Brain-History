@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 interface AppShellProps {
   user: { name: string; email: string; image?: string };
@@ -12,10 +13,12 @@ interface AppShellProps {
 const NAV = [
   { href: "/dashboard", label: "Library",   icon: LibraryIcon },
   { href: "/search",    label: "AI Search",  icon: SearchIcon },
+  { href: "/profile",   label: "Profile",    icon: UserIcon },
 ];
 
 export default function AppShell({ user, children }: AppShellProps) {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950">
@@ -25,14 +28,22 @@ export default function AppShell({ user, children }: AppShellProps) {
 
         {/* Brand */}
         <div className="h-14 flex items-center px-5 shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
               <BrainIcon className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100">
+            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
               Brain<span className="gradient-text">History</span>
             </span>
           </Link>
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="shrink-0 ml-1 p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+          >
+            {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+          </button>
         </div>
 
         {/* Nav links */}
@@ -107,6 +118,14 @@ export default function AppShell({ user, children }: AppShellProps) {
             {label}
           </Link>
         ))}
+        {/* Mobile theme toggle */}
+        <button
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+        >
+          {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+        </button>
         <button
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
           className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
@@ -163,12 +182,33 @@ function SearchIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
 function SparkleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 3L13.4 8.4L19 9L13.4 9.6L12 15L10.6 9.6L5 9L10.6 8.4L12 3Z" />
       <path opacity="0.5" d="M19 14L19.8 16.8L23 17L19.8 17.2L19 20L18.2 17.2L15 17L18.2 16.8L19 14Z" />
       <path opacity="0.5" d="M5 14L5.8 16.8L9 17L5.8 17.2L5 20L4.2 17.2L1 17L4.2 16.8L5 14Z" />
+    </svg>
+  );
+}
+function SunIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+function MoonIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
     </svg>
   );
 }

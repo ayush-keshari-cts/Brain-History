@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import CredentialsForm from "./CredentialsForm";
 
 export const metadata = { title: "Sign In — BrainHistory" };
 
@@ -26,7 +27,7 @@ export default async function SignInPage({
       <div className="absolute inset-0 dot-bg opacity-40 pointer-events-none" />
 
       {/* Card */}
-      <div className="relative w-full max-w-sm space-y-8 rounded-2xl p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl shadow-black/10 dark:shadow-black/40">
+      <div className="relative w-full max-w-sm space-y-6 rounded-2xl p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl shadow-black/10 dark:shadow-black/40">
         {/* Subtle top gradient line */}
         <div
           className="absolute top-0 left-8 right-8 h-px rounded-full"
@@ -107,8 +108,23 @@ export default async function SignInPage({
           </form>
         </div>
 
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+          <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">or sign in with email</span>
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+        </div>
+
+        {/* Email + password form (client component) */}
+        <CredentialsForm callbackUrl={callbackOrDefault} />
+
         <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
           Your content is private and only visible to you.
+          <br />
+          <span className="text-zinc-400 dark:text-zinc-500">
+            No password yet? Sign in with OAuth then set one in your{" "}
+            <a href="/profile" className="text-violet-600 dark:text-violet-400 hover:underline">profile</a>.
+          </span>
         </p>
       </div>
     </main>

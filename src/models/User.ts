@@ -8,6 +8,8 @@ export interface IUser extends Document {
   name: string;
   image?: string;
   emailVerified?: Date;
+  /** bcrypt/scrypt password hash — not selected by default */
+  password?: string;
   /** OAuth providers linked to this account */
   accounts: {
     provider: string;
@@ -43,6 +45,12 @@ const UserSchema = new Schema<IUser>(
     },
     image: String,
     emailVerified: Date,
+
+    // Stored as "salt:hash" (scrypt). Not returned in queries by default.
+    password: {
+      type:   String,
+      select: false,
+    },
 
     accounts: [
       {
