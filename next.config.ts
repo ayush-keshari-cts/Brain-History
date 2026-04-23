@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   // Tell Next.js to require them as-is instead of bundling.
   serverExternalPackages: [
     "pdf-parse",
+    "mammoth",
     "sharp",
     "mongoose",
   ],
