@@ -17,119 +17,154 @@ export default async function SignInPage({
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-zinc-50 dark:bg-zinc-950">
-      {/* Radial gradient glow */}
+      {/* Background glow */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139,92,246,0.18) 0%, transparent 60%)" }}
+        style={{ background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139,92,246,0.15) 0%, transparent 65%)" }}
       />
+      <div className="absolute inset-0 dot-bg opacity-30 pointer-events-none" />
 
-      {/* Dot grid */}
-      <div className="absolute inset-0 dot-bg opacity-40 pointer-events-none" />
+      {/* Two-column card */}
+      <div className="relative w-full max-w-3xl flex flex-col md:flex-row rounded-2xl overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/50 border border-zinc-200 dark:border-zinc-700">
 
-      {/* Card */}
-      <div className="relative w-full max-w-sm space-y-6 rounded-2xl p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl shadow-black/10 dark:shadow-black/40">
-        {/* Subtle top gradient line */}
+        {/* Gradient accent line across the very top */}
         <div
-          className="absolute top-0 left-8 right-8 h-px rounded-full"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)" }}
+          className="absolute top-0 inset-x-0 h-px z-10"
+          style={{ background: "linear-gradient(90deg, transparent 5%, rgba(139,92,246,0.6) 40%, rgba(99,102,241,0.6) 60%, transparent 95%)" }}
         />
 
-        {/* Brand */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/35">
-              <BrainIcon className="h-8 w-8 text-white" />
+        {/* ── LEFT — Brand + OAuth ──────────────────────────────────── */}
+        <div className="flex-1 flex flex-col gap-6 p-8 bg-white dark:bg-zinc-900 md:border-r border-b md:border-b-0 border-zinc-100 dark:border-zinc-800">
+
+          {/* Brand */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
+                <BrainIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-tight">
+                  Brain<span className="gradient-text">History</span>
+                </h1>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">AI-powered knowledge library</p>
+              </div>
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Brain<span className="gradient-text">History</span>
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Your AI-powered knowledge library.
-              <br />
-              Save anything. Find it instantly.
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Save anything from the web. Search and chat with your saved content using AI.
             </p>
           </div>
-        </div>
 
-        {/* Feature pills */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {["Vector Search", "AI Chat", "Any URL", "File Upload"].map((feat) => (
-            <span
-              key={feat}
-              className="text-xs px-2.5 py-1 rounded-full font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
-            >
-              {feat}
-            </span>
-          ))}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400 shrink-0" />
-            {error === "OAuthAccountNotLinked"
-              ? "This email is already linked to another provider."
-              : "Sign-in failed. Please try again."}
+          {/* Feature pills */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Vector Search",  icon: "◈" },
+              { label: "AI Chat",        icon: "✦" },
+              { label: "Any URL",        icon: "◉" },
+              { label: "File Upload",    icon: "⬛" },
+            ].map(({ label, icon }) => (
+              <span key={label} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+                <span className="text-xs opacity-70">{icon}</span>
+                {label}
+              </span>
+            ))}
           </div>
-        )}
 
-        {/* OAuth buttons */}
-        <div className="space-y-3">
-          <form
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: callbackOrDefault });
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-white dark:hover:bg-zinc-700/60 transition-all"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-          </form>
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-400 shrink-0" />
+              {error === "OAuthAccountNotLinked"
+                ? "Email already linked to another provider."
+                : "Sign-in failed. Please try again."}
+            </div>
+          )}
 
-          <form
-            action={async () => {
-              "use server";
-              await signIn("github", { redirectTo: callbackOrDefault });
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-white dark:hover:bg-zinc-700/60 transition-all"
+          {/* OAuth buttons */}
+          <div className="space-y-2.5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Continue with
+            </p>
+            <form
+              action={async () => {
+                "use server";
+                await signIn("google", { redirectTo: callbackOrDefault });
+              }}
             >
-              <GitHubIcon />
-              Continue with GitHub
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-white dark:hover:bg-zinc-700/60 transition-all"
+              >
+                <GoogleIcon />
+                Google
+              </button>
+            </form>
+
+            <form
+              action={async () => {
+                "use server";
+                await signIn("github", { redirectTo: callbackOrDefault });
+              }}
+            >
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-white dark:hover:bg-zinc-700/60 transition-all"
+              >
+                <GitHubIcon />
+                GitHub
+              </button>
+            </form>
+          </div>
+
+          <p className="mt-auto text-xs text-zinc-400 dark:text-zinc-500">
+            Your content is private and only visible to you.
+          </p>
         </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
-          <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">or sign in with email</span>
-          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+        {/* ── RIGHT — Email + Password ──────────────────────────────── */}
+        <div className="flex-1 flex flex-col gap-6 p-8 bg-zinc-50/80 dark:bg-zinc-950">
+
+          {/* Heading */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 flex items-center justify-center shrink-0">
+                <LockIcon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+              </div>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                Sign in with Password
+              </h2>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 pl-10.5">
+              Use your email and the password you set in your profile.
+            </p>
+          </div>
+
+          {/* Credentials form (client component) */}
+          <CredentialsForm callbackUrl={callbackOrDefault} />
+
+          {/* Tip */}
+          <div className="rounded-xl px-4 py-3 bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 space-y-1">
+            <p className="text-xs font-medium text-violet-700 dark:text-violet-400">
+              First time here?
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Sign in with Google or GitHub first, then go to{" "}
+              <a href="/profile" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                Profile → Set Password
+              </a>{" "}
+              to enable email sign-in.
+            </p>
+          </div>
+
+          <p className="mt-auto text-xs text-zinc-400 dark:text-zinc-500 text-center">
+            Passwords are hashed and never stored in plain text.
+          </p>
         </div>
-
-        {/* Email + password form (client component) */}
-        <CredentialsForm callbackUrl={callbackOrDefault} />
-
-        <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
-          Your content is private and only visible to you.
-          <br />
-          <span className="text-zinc-400 dark:text-zinc-500">
-            No password yet? Sign in with OAuth then set one in your{" "}
-            <a href="/profile" className="text-violet-600 dark:text-violet-400 hover:underline">profile</a>.
-          </span>
-        </p>
       </div>
     </main>
   );
 }
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function BrainIcon({ className }: { className?: string }) {
   return (
@@ -138,7 +173,9 @@ function BrainIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
+function LockIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
+}
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" style={{ height: "1.125rem", width: "1.125rem" }} className="shrink-0">
@@ -149,7 +186,6 @@ function GoogleIcon() {
     </svg>
   );
 }
-
 function GitHubIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" style={{ height: "1.125rem", width: "1.125rem" }} className="shrink-0 fill-current text-zinc-800 dark:text-zinc-200">
