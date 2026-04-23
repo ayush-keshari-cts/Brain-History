@@ -9,13 +9,13 @@ import ContentCard from "./ContentCard";
 const PAGE_SIZE = 20;
 
 export default function DashboardContent() {
-  const [items, setItems]           = useState<ContentItem[]>([]);
-  const [total, setTotal]           = useState(0);
-  const [page, setPage]             = useState(1);
-  const [loading, setLoading]       = useState(true);
+  const [items, setItems]             = useState<ContentItem[]>([]);
+  const [total, setTotal]             = useState(0);
+  const [page, setPage]               = useState(1);
+  const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [activeType, setActiveType] = useState<string | undefined>(undefined);
-  const pollRef                     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeType, setActiveType]   = useState<string | undefined>(undefined);
+  const pollRef                       = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchPage = useCallback(
     async (pg: number, type?: string, append = false) => {
@@ -31,14 +31,12 @@ export default function DashboardContent() {
     []
   );
 
-  // Initial load
   useEffect(() => {
     setLoading(true);
     setPage(1);
     fetchPage(1, activeType);
   }, [activeType, fetchPage]);
 
-  // Poll every 4s while any item is still pending/processing
   useEffect(() => {
     const hasPending = items.some(
       (i) => i.processingStatus === "pending" || i.processingStatus === "processing"
@@ -53,7 +51,6 @@ export default function DashboardContent() {
 
   const handleAdded = (newItem: ContentItem) => {
     setItems((prev) => {
-      // Replace if already exists (duplicate URL scenario), otherwise prepend
       const exists = prev.findIndex((i) => i._id === newItem._id);
       if (exists >= 0) {
         const updated = [...prev];
@@ -82,28 +79,50 @@ export default function DashboardContent() {
   };
 
   const hasMore = items.length < total;
+  const pendingCount = items.filter(i => i.processingStatus === "pending" || i.processingStatus === "processing").length;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Save URLs and chat with your content using AI.
-        </p>
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-7">
+
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Your <span className="gradient-text">Library</span>
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+            Save anything — AI makes it searchable and conversational.
+          </p>
+        </div>
+        {/* Stats */}
+        <div className="flex items-center gap-3 shrink-0">
+          {!loading && total > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium"
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--muted)" }}>
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+              {total} item{total !== 1 ? "s" : ""}
+            </div>
+          )}
+          {pendingCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+              {pendingCount} indexing
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Save URL form */}
+      {/* ── Save form ─────────────────────────────────────────────────────── */}
       <SaveUrlForm onAdded={handleAdded} />
 
-      {/* Filter bar */}
+      {/* ── Filter bar ───────────────────────────────────────────────────── */}
       <TypeFilterBar active={activeType} onChange={setActiveType} />
 
-      {/* Content grid */}
+      {/* ── Content grid ─────────────────────────────────────────────────── */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-40 rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+            <div key={i} className="h-56 rounded-2xl skeleton" style={{ border: "1px solid var(--border)" }} />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -121,9 +140,17 @@ export default function DashboardContent() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="px-5 py-2 text-sm font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl transition-all disabled:opacity-50 hover:border-violet-500/40"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--muted)" }}
               >
-                {loadingMore ? "Loading…" : `Load more (${total - items.length} remaining)`}
+                {loadingMore ? (
+                  <>
+                    <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  `Load more  ·  ${total - items.length} remaining`
+                )}
               </button>
             </div>
           )}
@@ -135,11 +162,23 @@ export default function DashboardContent() {
 
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
-    <div className="text-center py-20 space-y-3">
-      <div className="text-4xl">📭</div>
-      <p className="text-neutral-500 dark:text-neutral-400">
-        {filtered ? "No content matches this filter." : "Nothing saved yet. Paste a URL above to get started."}
-      </p>
+    <div className="flex flex-col items-center justify-center py-24 space-y-4 text-center">
+      <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 flex items-center justify-center"
+        style={{ border: "1px solid var(--border-2)" }}>
+        <svg className="h-7 w-7 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+        </svg>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">
+          {filtered ? "No content matches this filter" : "Your library is empty"}
+        </p>
+        <p className="text-xs max-w-xs" style={{ color: "var(--muted)" }}>
+          {filtered
+            ? "Try a different filter or save more content."
+            : "Paste a URL or upload a file above to get started."}
+        </p>
+      </div>
     </div>
   );
 }

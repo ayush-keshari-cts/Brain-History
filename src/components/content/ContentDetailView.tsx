@@ -6,38 +6,46 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import DeleteModal from "@/components/ui/DeleteModal";
 
-const TYPE_EMOJI: Record<string, string> = {
-  tweet: "🐦", youtube_video: "📹", youtube_music: "🎵", instagram: "📸",
-  blog: "📝", pdf: "📄", image: "🖼️", screenshot: "🖥️", website: "🌐",
-  github: "🐙", reddit: "🟠", linkedin: "💼", tiktok: "🎬", spotify: "🎵",
-  unknown: "🔗",
+const TYPE_CONFIG: Record<string, { emoji: string; color: string }> = {
+  tweet:         { emoji: "𝕏",  color: "bg-sky-500/10 text-sky-400" },
+  youtube_video: { emoji: "▶",  color: "bg-red-500/10 text-red-400" },
+  youtube_music: { emoji: "♪",  color: "bg-red-500/10 text-red-400" },
+  instagram:     { emoji: "◈",  color: "bg-pink-500/10 text-pink-400" },
+  blog:          { emoji: "✦",  color: "bg-emerald-500/10 text-emerald-400" },
+  pdf:           { emoji: "⬛", color: "bg-orange-500/10 text-orange-400" },
+  image:         { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400" },
+  screenshot:    { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400" },
+  website:       { emoji: "◉",  color: "bg-blue-500/10 text-blue-400" },
+  github:        { emoji: "⊛",  color: "bg-zinc-500/10 text-zinc-400" },
+  reddit:        { emoji: "◎",  color: "bg-orange-500/10 text-orange-400" },
+  linkedin:      { emoji: "in", color: "bg-blue-500/10 text-blue-400" },
+  spotify:       { emoji: "♫",  color: "bg-green-500/10 text-green-400" },
+  unknown:       { emoji: "◇",  color: "bg-zinc-500/10 text-zinc-400" },
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  pending:    "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-  processing: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-  completed:  "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-  failed:     "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+const STATUS_CONFIG: Record<string, { dot: string; pill: string }> = {
+  pending:    { dot: "bg-amber-400 animate-pulse",  pill: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+  processing: { dot: "bg-blue-400 animate-pulse",   pill: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+  completed:  { dot: "bg-emerald-400",              pill: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+  failed:     { dot: "bg-red-400",                  pill: "bg-red-500/10 text-red-400 border-red-500/20" },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ContentDetailView({ content }: { content: Record<string, any> }) {
   const router = useRouter();
-  const [deleting,         setDeleting]         = useState(false);
-  const [showDeleteModal,  setShowDeleteModal]  = useState(false);
-  const [favourite,        setFavourite]        = useState<boolean>(Boolean(content.isFavourite));
-  const [favLoading,       setFavLoading]       = useState(false);
+  const [deleting,        setDeleting]        = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [favourite,       setFavourite]       = useState<boolean>(Boolean(content.isFavourite));
+  const [favLoading,      setFavLoading]      = useState(false);
 
-  const isUploaded  = content.platform === "upload";
-  const hasFile     = Boolean(content.fileUrl);
+  const isUploaded = content.platform === "upload";
+  const hasFile    = Boolean(content.fileUrl);
 
   const isImage = content.contentType === "image" || content.contentType === "screenshot";
   const isPdf   = content.contentType === "pdf";
   const isAudio = content.contentType === "spotify";
   const isVideo = content.contentType === "youtube_video" || content.contentType === "youtube_music";
 
-  // For uploaded files, always go through our proxy (sets correct Content-Type for PDFs).
-  // For URL-based PDFs / images, use the original URL directly in the viewer.
   const viewerFileUrl: string | null = isUploaded && hasFile
     ? `/api/files/${content._id}`
     : (isPdf || isImage) && content.url
@@ -45,7 +53,6 @@ export default function ContentDetailView({ content }: { content: Record<string,
       : null;
   const showViewer = Boolean(viewerFileUrl);
 
-  // Download URL: uploaded → Cloudinary proxy; URL-based image/pdf → /api/download proxy
   const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
   const downloadUrl = isUploaded && hasFile
     ? `/api/files/${content._id}?download`
@@ -55,8 +62,10 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
   const isLarge     = content.contentSize === "large";
   const isCompleted = content.processingStatus === "completed";
-  const emoji       = TYPE_EMOJI[content.contentType] ?? "🔗";
-  const savedDate   = content.savedAt
+  const typeConf    = TYPE_CONFIG[content.contentType] ?? TYPE_CONFIG.unknown;
+  const statusConf  = STATUS_CONFIG[content.processingStatus] ?? STATUS_CONFIG.completed;
+
+  const savedDate = content.savedAt
     ? new Date(content.savedAt).toLocaleDateString(undefined, { dateStyle: "long" })
     : "";
 
@@ -95,12 +104,18 @@ export default function ContentDetailView({ content }: { content: Record<string,
       />
     )}
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
       {/* Back */}
-      <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-foreground transition-colors">
-        <ChevronLeftIcon className="h-4 w-4" /> Dashboard
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm transition-colors hover:text-foreground"
+        style={{ color: "var(--muted)" }}
+      >
+        <ChevronLeftIcon className="h-4 w-4" />
+        Library
       </Link>
 
-      {/* ── Media viewer ────────────────────────────────────────────────────── */}
+      {/* ── Media viewer ──────────────────────────────────────────────────── */}
       {showViewer && viewerFileUrl && (
         <MediaViewer
           fileUrl={viewerFileUrl}
@@ -113,51 +128,94 @@ export default function ContentDetailView({ content }: { content: Record<string,
         />
       )}
 
-      {/* Fallback thumbnail for URL-based content that has no viewer (e.g. tweet, video link) */}
+      {/* Fallback thumbnail for non-viewable URL content */}
       {!showViewer && !isUploaded && content.thumbnail && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={content.thumbnail} alt="" className="w-full max-h-64 object-cover rounded-xl" />
+        <img src={content.thumbnail} alt="" className="w-full max-h-64 object-cover rounded-2xl" />
       )}
 
-      {/* ── Title + meta ─────────────────────────────────────────────────────── */}
-      <div className="space-y-3">
+      {/* ── Header card ───────────────────────────────────────────────────── */}
+      <div className="rounded-2xl p-5 space-y-4"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+
+        {/* Title row */}
         <div className="flex items-start gap-3">
-          <span className="text-3xl shrink-0 mt-1">{emoji}</span>
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-base font-bold shrink-0 mt-0.5 ${typeConf.color}`}
+            style={{ border: "1px solid var(--border)" }}>
+            {typeConf.emoji}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
               <h1 className="flex-1 text-xl font-bold text-foreground leading-snug">{content.title}</h1>
-              {/* Favourite button */}
-              <button onClick={handleFavourite} disabled={favLoading} title={favourite ? "Remove from favourites" : "Add to favourites"}
-                className="shrink-0 p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors disabled:opacity-50">
-                <StarIcon filled={favourite} className={`h-5 w-5 ${favourite ? "text-amber-400" : "text-neutral-300 dark:text-neutral-600"}`} />
+              <button
+                onClick={handleFavourite}
+                disabled={favLoading}
+                title={favourite ? "Remove from favourites" : "Add to favourites"}
+                className="shrink-0 p-1.5 rounded-xl transition-all hover:bg-amber-500/10 disabled:opacity-50"
+              >
+                <StarIcon filled={favourite} className={`h-5 w-5 ${favourite ? "text-amber-400" : "text-muted"}`} />
               </button>
             </div>
             {content.description && (
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-3">{content.description}</p>
+              <p className="mt-1.5 text-sm leading-relaxed line-clamp-3" style={{ color: "var(--muted)" }}>
+                {content.description}
+              </p>
             )}
           </div>
         </div>
 
         {/* Badges */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 capitalize">
-            {content.contentType?.replace(/_/g, " ")}
-          </span>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLE[content.processingStatus] ?? ""}`}>
+        <div className="flex flex-wrap gap-2">
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${statusConf.pill}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${statusConf.dot}`} />
             {content.processingStatus}
           </span>
-          {isLarge && <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">large document</span>}
-          {isUploaded && <span className="text-xs px-2.5 py-1 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300">uploaded file</span>}
-          {content.embeddingsCount > 0 && <span className="text-xs px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500">{content.embeddingsCount} chunks indexed</span>}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${typeConf.color}`}
+            style={{ border: "1px solid var(--border)" }}>
+            {content.contentType?.replace(/_/g, " ")}
+          </span>
+          {isLarge && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-medium">
+              large document
+            </span>
+          )}
+          {isUploaded && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">
+              uploaded
+            </span>
+          )}
+          {content.embeddingsCount > 0 && (
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+              style={{ background: "var(--surface-2)", color: "var(--muted)", border: "1px solid var(--border)" }}>
+              {content.embeddingsCount} chunks indexed
+            </span>
+          )}
         </div>
 
-        {/* Meta fields */}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          {content.author && (<><dt className="text-neutral-400">Author</dt><dd className="text-foreground truncate">{content.author}</dd></>)}
-          {savedDate && (<><dt className="text-neutral-400">Saved</dt><dd className="text-foreground">{savedDate}</dd></>)}
+        {/* Meta */}
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs pt-1"
+          style={{ borderTop: "1px solid var(--border)" }}>
+          {content.author && (
+            <>
+              <dt className="font-medium" style={{ color: "var(--muted)" }}>Author</dt>
+              <dd className="text-foreground truncate">{content.author}</dd>
+            </>
+          )}
+          {savedDate && (
+            <>
+              <dt className="font-medium" style={{ color: "var(--muted)" }}>Saved</dt>
+              <dd className="text-foreground">{savedDate}</dd>
+            </>
+          )}
           {!isUploaded && (
-            <><dt className="text-neutral-400">URL</dt>
-            <dd className="truncate"><a href={content.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">{content.url}</a></dd></>
+            <>
+              <dt className="font-medium" style={{ color: "var(--muted)" }}>Source</dt>
+              <dd className="truncate">
+                <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 hover:underline">
+                  {(() => { try { return new URL(content.url).hostname.replace(/^www\./, ""); } catch { return content.url; } })()}
+                </a>
+              </dd>
+            </>
           )}
         </dl>
 
@@ -165,7 +223,10 @@ export default function ContentDetailView({ content }: { content: Record<string,
         {Array.isArray(content.tags) && content.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {content.tags.map((tag: string) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500">#{tag}</span>
+              <span key={tag} className="text-xs px-2 py-0.5 rounded-lg font-medium"
+                style={{ background: "var(--surface-2)", color: "var(--muted)", border: "1px solid var(--border)" }}>
+                #{tag}
+              </span>
             ))}
           </div>
         )}
@@ -173,56 +234,80 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
       {/* Processing error */}
       {content.processingStatus === "failed" && content.processingError && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-          <strong>Indexing failed:</strong> {content.processingError}
+        <div className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm text-red-400 bg-red-500/8 border border-red-500/20">
+          <span className="h-2 w-2 rounded-full bg-red-400 shrink-0 mt-1" />
+          <div>
+            <strong className="font-semibold">Indexing failed:</strong>{" "}
+            {content.processingError}
+          </div>
         </div>
       )}
 
-      {/* ── Actions ──────────────────────────────────────────────────────────── */}
+      {/* Notes */}
+      {content.notes && (
+        <div className="rounded-2xl p-4 space-y-2"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Notes</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{content.notes}</p>
+        </div>
+      )}
+
+      {/* ── Actions ───────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
         {!isUploaded && (
-          <a href={content.url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm font-medium text-foreground hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-            <ExternalLinkIcon className="h-4 w-4" /> Open original
+          <a
+            href={content.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-violet-500/30 hover:text-violet-400"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <ExternalLinkIcon className="h-4 w-4" />
+            Open original
           </a>
         )}
 
         {downloadUrl && (
-          <a href={downloadUrl}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm font-medium text-foreground hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-            <DownloadIcon className="h-4 w-4" /> Download original
+          <a
+            href={downloadUrl}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-violet-500/30 hover:text-violet-400"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Download
           </a>
         )}
 
         {isLarge && isCompleted && (
-          <Link href={`/content/${content._id}/chat`}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-            <ChatIcon className="h-4 w-4" /> Chat with this content
+          <Link
+            href={`/content/${content._id}/chat`}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20"
+          >
+            <ChatIcon className="h-4 w-4" />
+            Chat with content
           </Link>
         )}
 
         {!isLarge && isCompleted && (
-          <Link href="/search"
-            className="inline-flex items-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors">
-            <SearchIcon className="h-4 w-4" /> Find related content
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-violet-400 transition-all"
+            style={{ background: "var(--surface)", border: "1px solid rgba(139,92,246,0.25)" }}
+          >
+            <SearchIcon className="h-4 w-4" />
+            Find related content
           </Link>
         )}
 
         <button
           onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-400 transition-all hover:bg-red-500/10"
+          style={{ background: "var(--surface)", border: "1px solid rgba(239,68,68,0.2)" }}
         >
-          <TrashIcon className="h-4 w-4" /> Delete
+          <TrashIcon className="h-4 w-4" />
+          Delete
         </button>
       </div>
-
-      {/* Notes */}
-      {content.notes && (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 space-y-1">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Notes</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{content.notes}</p>
-        </div>
-      )}
     </div>
     </>
   );
@@ -241,51 +326,56 @@ function MediaViewer({
   isVideo: boolean;
   filename: string;
 }) {
+  const headerStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0.5rem 1rem",
+    borderBottom: "1px solid var(--border)",
+  };
+
   if (isPdf) {
     return (
-      <div className="rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 dark:border-neutral-800">
-          <span className="text-xs font-medium text-neutral-500">PDF Preview</span>
-          <a href={downloadUrl} className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={headerStyle}>
+          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>PDF Preview</span>
+          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
             <DownloadIcon className="h-3.5 w-3.5" /> Download
           </a>
         </div>
-        <iframe
-          src={fileUrl}
-          title={filename}
-          className="w-full"
-          style={{ height: "70vh" }}
-        />
+        <iframe src={fileUrl} title={filename} className="w-full" style={{ height: "72vh" }} />
       </div>
     );
   }
 
   if (isImage) {
     return (
-      <div className="rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-2">
-        <div className="flex justify-end px-2 py-1">
-          <a href={downloadUrl} className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div style={headerStyle}>
+          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>Image Preview</span>
+          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
             <DownloadIcon className="h-3.5 w-3.5" /> Download
           </a>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={fileUrl} alt={filename} className="w-full max-h-[70vh] object-contain rounded-lg" />
+        <img src={fileUrl} alt={filename} className="w-full max-h-[70vh] object-contain" style={{ background: "var(--surface-2)" }} />
       </div>
     );
   }
 
   if (isAudio) {
     return (
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🎵</span>
-            <div>
-              <p className="text-sm font-medium text-foreground">{filename}</p>
-              <p className="text-xs text-neutral-400">Audio file</p>
-            </div>
+      <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 flex items-center justify-center text-2xl"
+            style={{ border: "1px solid var(--border)" }}>
+            🎵
           </div>
-          <a href={downloadUrl} className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{filename}</p>
+            <p className="text-xs" style={{ color: "var(--muted)" }}>Audio file</p>
+          </div>
+          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors shrink-0">
             <DownloadIcon className="h-3.5 w-3.5" /> Download
           </a>
         </div>
@@ -299,30 +389,35 @@ function MediaViewer({
 
   if (isVideo) {
     return (
-      <div className="rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-black">
-        <div className="flex justify-end px-4 py-2 bg-neutral-900">
-          <a href={downloadUrl} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+        <div style={{ ...headerStyle, background: "var(--sidebar-bg)" }}>
+          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>Video Preview</span>
+          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
             <DownloadIcon className="h-3.5 w-3.5" /> Download
           </a>
         </div>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video controls className="w-full max-h-[70vh]" src={fileUrl}>
+        <video controls className="w-full max-h-[70vh] bg-black" src={fileUrl}>
           Your browser does not support the video element.
         </video>
       </div>
     );
   }
 
-  // Generic download card (Word docs, etc.)
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 flex items-center gap-4">
-      <span className="text-4xl">📁</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{filename}</p>
-        <p className="text-xs text-neutral-400">Uploaded document</p>
+    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="h-12 w-12 rounded-2xl bg-violet-500/8 flex items-center justify-center text-2xl shrink-0"
+        style={{ border: "1px solid var(--border)" }}>
+        📁
       </div>
-      <a href={downloadUrl}
-        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shrink-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate">{filename}</p>
+        <p className="text-xs" style={{ color: "var(--muted)" }}>Uploaded document</p>
+      </div>
+      <a
+        href={downloadUrl}
+        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20 shrink-0"
+      >
         <DownloadIcon className="h-4 w-4" /> Download
       </a>
     </div>

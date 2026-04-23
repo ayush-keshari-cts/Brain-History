@@ -10,8 +10,8 @@ interface AppShellProps {
 }
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
-  { href: "/search",    label: "Search",    icon: SearchIcon },
+  { href: "/dashboard", label: "Library",  icon: LibraryIcon },
+  { href: "/search",    label: "AI Search", icon: SearchIcon },
 ];
 
 export default function AppShell({ user, children }: AppShellProps) {
@@ -19,60 +19,86 @@ export default function AppShell({ user, children }: AppShellProps) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* ── Desktop sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 z-20 border-r border-neutral-200 dark:border-neutral-800 bg-background">
+
+      {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
+      <aside
+        className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 z-20"
+        style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border)" }}
+      >
         {/* Brand */}
-        <div className="h-14 flex items-center px-5 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-foreground">
-            <span className="text-xl">🧠</span>
-            BrainHistory
+        <div className="h-14 flex items-center px-5 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            {/* Gradient brain icon */}
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
+              <BrainIcon className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-bold text-sm tracking-tight text-foreground">
+              Brain<span className="gradient-text">History</span>
+            </span>
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-0.5">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
                   active
-                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300"
-                    : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-foreground"
+                    ? "bg-violet-500/10 dark:bg-violet-500/15 text-violet-600 dark:text-violet-300"
+                    : "text-muted hover:text-foreground hover:bg-surface-2 dark:hover:bg-white/5"
                 }`}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-violet-500" : "text-muted group-hover:text-foreground"}`} />
                 {label}
+                {active && (
+                  <div className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-500" />
+                )}
               </Link>
             );
           })}
         </nav>
 
+        {/* AI badge */}
+        <div className="px-3 pb-1">
+          <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-gradient-to-r from-violet-500/8 to-indigo-500/8 border border-violet-500/15">
+            <SparkleIcon className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+            <span className="text-xs text-violet-400 font-medium">AI Powered</span>
+          </div>
+        </div>
+
         {/* User */}
-        <div className="shrink-0 p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-1">
-          <div className="flex items-center gap-2.5 px-2 py-1.5">
+        <div className="shrink-0 px-2.5 py-3" style={{ borderTop: "1px solid var(--border)" }}>
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl" style={{ background: "var(--surface-2)" }}>
             <Avatar name={user.name} image={user.image} size={28} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate text-foreground">{user.name}</p>
-              <p className="text-xs text-neutral-400 truncate">{user.email}</p>
+              <p className="text-xs font-semibold truncate text-foreground">{user.name}</p>
+              <p className="text-xs truncate" style={{ color: "var(--muted)" }}>{user.email}</p>
             </div>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-            className="w-full text-left px-3 py-1.5 text-xs text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+            className="mt-1 w-full text-left px-3 py-1.5 text-xs rounded-xl transition-all duration-150 hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
+            style={{ color: "var(--muted)" }}
           >
             Sign out
           </button>
         </div>
       </aside>
 
-      {/* ── Mobile top bar ──────────────────────────────────────────── */}
-      <header className="md:hidden fixed inset-x-0 top-0 h-14 z-20 flex items-center px-4 gap-4 bg-background border-b border-neutral-200 dark:border-neutral-800">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-foreground">
-          <span className="text-xl">🧠</span>
-          BrainHistory
+      {/* ── Mobile top bar ───────────────────────────────────────────────── */}
+      <header
+        className="md:hidden fixed inset-x-0 top-0 h-14 z-20 flex items-center px-4 gap-4 glass"
+        style={{ borderBottom: "1px solid var(--border)" }}
+      >
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
+            <BrainIcon className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="font-bold text-sm text-foreground">Brain<span className="gradient-text">History</span></span>
         </Link>
         <div className="flex-1" />
         {NAV.map(({ href, label }) => (
@@ -80,21 +106,25 @@ export default function AppShell({ user, children }: AppShellProps) {
             key={href}
             href={href}
             className={`text-sm font-medium transition-colors ${
-              pathname.startsWith(href) ? "text-blue-600 dark:text-blue-400" : "text-neutral-500 dark:text-neutral-400"
+              pathname.startsWith(href)
+                ? "text-violet-600 dark:text-violet-300"
+                : "hover:text-foreground"
             }`}
+            style={{ color: pathname.startsWith(href) ? undefined : "var(--muted)" }}
           >
             {label}
           </Link>
         ))}
         <button
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-          className="text-xs text-neutral-500 hover:text-red-600 transition-colors"
+          className="text-xs transition-colors hover:text-red-500"
+          style={{ color: "var(--muted)" }}
         >
           Sign out
         </button>
       </header>
 
-      {/* ── Main content ────────────────────────────────────────────── */}
+      {/* ── Main content ─────────────────────────────────────────────────── */}
       <main className="flex-1 md:ml-56 min-h-screen">
         <div className="pt-14 md:pt-0 h-full">{children}</div>
       </main>
@@ -108,31 +138,49 @@ function Avatar({ name, image, size }: { name: string; image?: string; size: num
   const style = { width: size, height: size };
   if (image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={image} alt={name} style={style} className="rounded-full object-cover shrink-0" />;
+    return <img src={image} alt={name} style={style} className="rounded-full object-cover ring-2 ring-violet-500/30 shrink-0" />;
   }
   return (
     <div
       style={style}
-      className="rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shrink-0"
+      className="rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0 ring-2 ring-violet-500/20"
       aria-hidden
     >
-      <span style={{ fontSize: size * 0.45 }}>{name.charAt(0).toUpperCase()}</span>
+      <span style={{ fontSize: size * 0.42 }}>{name.charAt(0).toUpperCase()}</span>
     </div>
   );
 }
 
-function HomeIcon({ className }: { className?: string }) {
+function BrainIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+    </svg>
+  );
+}
+
+function LibraryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
   );
 }
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  );
+}
+
+function SparkleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3L13.4 8.4L19 9L13.4 9.6L12 15L10.6 9.6L5 9L10.6 8.4L12 3Z" />
+      <path d="M19 14L19.8 16.8L23 17L19.8 17.2L19 20L18.2 17.2L15 17L18.2 16.8L19 14Z" opacity="0.5" />
+      <path d="M5 14L5.8 16.8L9 17L5.8 17.2L5 20L4.2 17.2L1 17L4.2 16.8L5 14Z" opacity="0.5" />
     </svg>
   );
 }
