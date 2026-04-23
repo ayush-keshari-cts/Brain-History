@@ -1,71 +1,37 @@
 @import "tailwindcss";
 
-/* ── Design tokens ─────────────────────────────────────────────────────────── */
-
-:root {
-  --background:   #f5f5fb;
-  --foreground:   #0a0a12;
-  --surface:      #ffffff;
-  --surface-2:    #ebebf5;
-  --border:       rgba(0, 0, 0, 0.07);
-  --border-2:     rgba(0, 0, 0, 0.13);
-  --muted:        #8888a2;
-  --sidebar-bg:   #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background:   #07070f;
-    --foreground:   #eeeef8;
-    --surface:      #0e0e1c;
-    --surface-2:    #14142a;
-    --border:       rgba(255, 255, 255, 0.07);
-    --border-2:     rgba(255, 255, 255, 0.12);
-    --muted:        #606078;
-    --sidebar-bg:   #08080e;
-  }
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface:    var(--surface);
-  --color-surface-2:  var(--surface-2);
-  --color-muted:      var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* ── Base ────────────────────────────────────────────────────────────────────── */
+/* ── Base ─────────────────────────────────────────────────────────────────── */
 
 html { color-scheme: light dark; }
 
 body {
-  background:  var(--background);
-  color:       var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Custom scrollbar ───────────────────────────────────────────────────────── */
+/* ── Custom scrollbar ─────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.22);
+  background: rgba(139, 92, 246, 0.25);
   border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.42); }
+::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.45); }
 
-/* ── Text selection ─────────────────────────────────────────────────────────── */
+/* ── Selection ────────────────────────────────────────────────────────────── */
 
 ::selection {
   background: rgba(139, 92, 246, 0.25);
-  color: var(--foreground);
 }
 
-/* ── Gradient text ──────────────────────────────────────────────────────────── */
+/* ── Gradient text ────────────────────────────────────────────────────────── */
 
 .gradient-text {
   background: linear-gradient(135deg, #a78bfa 0%, #818cf8 60%, #c084fc 100%);
@@ -74,36 +40,30 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ── Glass morphism ─────────────────────────────────────────────────────────── */
-
-.glass {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: rgba(14, 14, 28, 0.65);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-}
-
-/* ── Dot grid pattern (auth page) ───────────────────────────────────────────── */
+/* ── Dot grid pattern (auth page background) ─────────────────────────────── */
 
 .dot-bg {
-  background-image: radial-gradient(circle, rgba(139, 92, 246, 0.18) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(139, 92, 246, 0.15) 1px, transparent 1px);
   background-size: 26px 26px;
 }
 
-/* ── Violet glow ────────────────────────────────────────────────────────────── */
+/* ── Card top-accent shimmer on hover ────────────────────────────────────── */
 
-.glow-violet {
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35), 0 4px 24px rgba(139, 92, 246, 0.18);
+.card-accent { position: relative; overflow: hidden; }
+
+.card-accent::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.55), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1;
 }
+.card-accent:hover::before { opacity: 1; }
 
-/* ── Skeleton shimmer ───────────────────────────────────────────────────────── */
+/* ── Skeleton shimmer ─────────────────────────────────────────────────────── */
 
 @keyframes shimmer {
   0%   { background-position: -500px 0; }
@@ -113,27 +73,23 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(139, 92, 246, 0.04) 0%,
-    rgba(139, 92, 246, 0.10) 50%,
-    rgba(139, 92, 246, 0.04) 100%
+    rgba(139, 92, 246, 0.03) 0%,
+    rgba(139, 92, 246, 0.09) 50%,
+    rgba(139, 92, 246, 0.03) 100%
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
 
-/* ── Card hover accent (top border) ─────────────────────────────────────────── */
-
-.card-accent {
-  position: relative;
-  overflow: hidden;
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(139, 92, 246, 0.04) 0%,
+      rgba(139, 92, 246, 0.12) 50%,
+      rgba(139, 92, 246, 0.04) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+  }
 }
-.card-accent::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.card-accent:hover::before { opacity: 1; }

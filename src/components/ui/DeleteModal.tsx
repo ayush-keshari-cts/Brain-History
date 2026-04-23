@@ -18,34 +18,27 @@ export default function DeleteModal({ title, onConfirm, onCancel, loading }: Del
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-5"
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border-2)",
-          boxShadow: "0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(239,68,68,0.12)",
-        }}
+        className="w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Icon */}
         <div className="flex justify-center">
-          <div className="h-14 w-14 rounded-2xl bg-red-500/10 flex items-center justify-center"
-            style={{ border: "1px solid rgba(239,68,68,0.2)" }}>
-            <TrashIcon className="h-6 w-6 text-red-400" />
+          <div className="h-14 w-14 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 flex items-center justify-center">
+            <TrashIcon className="h-6 w-6 text-red-500 dark:text-red-400" />
           </div>
         </div>
 
         {/* Text */}
         <div className="text-center space-y-2">
-          <h3 className="text-base font-bold text-foreground">Delete this item?</h3>
-          <p className="text-sm line-clamp-2 px-2" style={{ color: "var(--muted)" }}>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Delete this item?</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 px-2">
             &ldquo;{title}&rdquo;
           </p>
-          <p className="text-xs" style={{ color: "var(--muted)" }}>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
             This permanently removes the content and all embeddings. This action cannot be undone.
           </p>
         </div>
@@ -55,8 +48,7 @@ export default function DeleteModal({ title, onConfirm, onCancel, loading }: Del
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-xl py-2.5 text-sm font-medium text-foreground transition-all disabled:opacity-50 hover:border-violet-500/30"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)" }}
+            className="flex-1 rounded-xl py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 transition-all disabled:opacity-50"
           >
             Cancel
           </button>

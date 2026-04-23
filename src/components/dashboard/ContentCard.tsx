@@ -5,31 +5,28 @@ import Link from "next/link";
 import { api, type ContentItem } from "@/lib/api-client";
 import DeleteModal from "@/components/ui/DeleteModal";
 
-// ─── Type config ──────────────────────────────────────────────────────────────
-
-const TYPE_CONFIG: Record<string, { emoji: string; color: string }> = {
-  tweet:         { emoji: "𝕏",  color: "bg-sky-500/10 text-sky-400 dark:text-sky-300" },
-  youtube_video: { emoji: "▶",  color: "bg-red-500/10 text-red-400 dark:text-red-300" },
-  youtube_music: { emoji: "♪",  color: "bg-red-500/10 text-red-400 dark:text-red-300" },
-  instagram:     { emoji: "◈",  color: "bg-pink-500/10 text-pink-400 dark:text-pink-300" },
-  blog:          { emoji: "✦",  color: "bg-emerald-500/10 text-emerald-400 dark:text-emerald-300" },
-  pdf:           { emoji: "⬛", color: "bg-orange-500/10 text-orange-400 dark:text-orange-300" },
-  image:         { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400 dark:text-violet-300" },
-  screenshot:    { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400 dark:text-violet-300" },
-  website:       { emoji: "◉",  color: "bg-blue-500/10 text-blue-400 dark:text-blue-300" },
-  github:        { emoji: "⊛",  color: "bg-zinc-500/10 text-zinc-400 dark:text-zinc-300" },
-  reddit:        { emoji: "◎",  color: "bg-orange-500/10 text-orange-400 dark:text-orange-300" },
-  linkedin:      { emoji: "in", color: "bg-blue-500/10 text-blue-400 dark:text-blue-300" },
-  tiktok:        { emoji: "◈",  color: "bg-pink-500/10 text-pink-400 dark:text-pink-300" },
-  spotify:       { emoji: "♫",  color: "bg-green-500/10 text-green-400 dark:text-green-300" },
-  unknown:       { emoji: "◇",  color: "bg-zinc-500/10 text-zinc-400 dark:text-zinc-300" },
+const TYPE_CONFIG: Record<string, { emoji: string; light: string; dark: string }> = {
+  tweet:         { emoji: "𝕏",  light: "bg-sky-50 text-sky-600 border-sky-100",          dark: "dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20" },
+  youtube_video: { emoji: "▶",  light: "bg-red-50 text-red-600 border-red-100",           dark: "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  youtube_music: { emoji: "♪",  light: "bg-red-50 text-red-600 border-red-100",           dark: "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  instagram:     { emoji: "◈",  light: "bg-pink-50 text-pink-600 border-pink-100",        dark: "dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20" },
+  blog:          { emoji: "✦",  light: "bg-emerald-50 text-emerald-700 border-emerald-100", dark: "dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
+  pdf:           { emoji: "⬛", light: "bg-orange-50 text-orange-600 border-orange-100",  dark: "dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" },
+  image:         { emoji: "⬡",  light: "bg-violet-50 text-violet-700 border-violet-100",  dark: "dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20" },
+  screenshot:    { emoji: "⬡",  light: "bg-violet-50 text-violet-700 border-violet-100",  dark: "dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20" },
+  website:       { emoji: "◉",  light: "bg-blue-50 text-blue-700 border-blue-100",        dark: "dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
+  github:        { emoji: "⊛",  light: "bg-zinc-100 text-zinc-700 border-zinc-200",       dark: "dark:bg-zinc-700/30 dark:text-zinc-300 dark:border-zinc-600/30" },
+  reddit:        { emoji: "◎",  light: "bg-orange-50 text-orange-600 border-orange-100",  dark: "dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" },
+  linkedin:      { emoji: "in", light: "bg-blue-50 text-blue-700 border-blue-100",        dark: "dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
+  spotify:       { emoji: "♫",  light: "bg-green-50 text-green-700 border-green-100",     dark: "dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" },
+  unknown:       { emoji: "◇",  light: "bg-zinc-100 text-zinc-600 border-zinc-200",       dark: "dark:bg-zinc-700/30 dark:text-zinc-400 dark:border-zinc-600/30" },
 };
 
 const STATUS_CONFIG = {
-  pending:    { dot: "bg-amber-400 animate-pulse",  pill: "bg-amber-500/10 text-amber-400 dark:text-amber-300" },
-  processing: { dot: "bg-blue-400 animate-pulse",   pill: "bg-blue-500/10 text-blue-400 dark:text-blue-300" },
-  completed:  { dot: "bg-emerald-400",              pill: "bg-emerald-500/10 text-emerald-400 dark:text-emerald-300" },
-  failed:     { dot: "bg-red-400",                  pill: "bg-red-500/10 text-red-400 dark:text-red-300" },
+  pending:    { dot: "bg-amber-400 animate-pulse",  badge: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" },
+  processing: { dot: "bg-blue-400 animate-pulse",   badge: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
+  completed:  { dot: "bg-emerald-400",              badge: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
+  failed:     { dot: "bg-red-400",                  badge: "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
 } as const;
 
 interface Props {
@@ -69,21 +66,20 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
     }
   };
 
-  const isPending  = item.processingStatus === "pending" || item.processingStatus === "processing";
   const isUploaded = item.platform === "upload";
-
   const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
-  const canDownloadUrl   = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
-  const downloadHref     = isUploaded && item.fileUrl
+  const canDownloadUrl = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
+  const downloadHref = isUploaded && item.fileUrl
     ? `/api/files/${item._id}?download`
     : canDownloadUrl
       ? `/api/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.title)}`
       : null;
 
-  const typeConf  = TYPE_CONFIG[item.contentType] ?? TYPE_CONFIG.unknown;
-  const statusConf = STATUS_CONFIG[item.processingStatus] ?? STATUS_CONFIG.completed;
+  const tc = TYPE_CONFIG[item.contentType] ?? TYPE_CONFIG.unknown;
+  const sc = STATUS_CONFIG[item.processingStatus] ?? STATUS_CONFIG.completed;
+  const typeBadge = `${tc.light} ${tc.dark}`;
 
-  const domain  = isUploaded
+  const domain = isUploaded
     ? "Uploaded file"
     : (() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.url; } })();
   const dateStr = new Date(item.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -99,121 +95,90 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
       />
     )}
 
-    <div
-      className={`card-accent relative group flex flex-col rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 ${
-        deleting ? "opacity-40 pointer-events-none scale-95" : ""
-      }`}
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-      }}
-    >
-      {/* Hover shadow */}
-      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-        style={{ boxShadow: "0 8px 32px rgba(139,92,246,0.12)" }} />
+    <div className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-md dark:hover:shadow-zinc-900/50 transition-all duration-200 hover:-translate-y-0.5 ${deleting ? "opacity-40 pointer-events-none" : ""}`}>
 
-      {/* Favourite star */}
+      {/* Favourite button */}
       <button
         onClick={handleFavourite}
         disabled={favLoading}
         title={item.isFavourite ? "Remove from favourites" : "Add to favourites"}
-        className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full glass transition-transform hover:scale-110 disabled:opacity-50"
-        style={{ border: "1px solid var(--border)" }}
+        className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-100 dark:border-zinc-700 shadow-sm hover:scale-110 transition-transform disabled:opacity-50"
       >
-        <StarIcon filled={item.isFavourite} className={`h-3.5 w-3.5 ${item.isFavourite ? "text-amber-400" : "text-muted"}`} />
+        <StarIcon filled={item.isFavourite} className={`h-3.5 w-3.5 ${item.isFavourite ? "text-amber-400" : "text-zinc-300 dark:text-zinc-600"}`} />
       </button>
 
-      {/* Thumbnail / placeholder */}
+      {/* Thumbnail */}
       {item.thumbnail ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.thumbnail}
-          alt=""
-          className="w-full h-32 object-cover"
-          style={{ background: "var(--surface-2)" }}
-        />
+        <img src={item.thumbnail} alt="" className="w-full h-32 object-cover bg-zinc-100 dark:bg-zinc-800" />
       ) : (
-        <div
-          className="w-full h-32 flex items-center justify-center relative overflow-hidden"
-          style={{ background: "var(--surface-2)" }}
-        >
-          {/* Subtle gradient radial bg */}
+        <div className="w-full h-32 flex items-center justify-center relative overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-indigo-500/5" />
-          <div
-            className={`h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-bold ${typeConf.color}`}
-            style={{ border: "1px solid var(--border-2)" }}
-          >
-            {typeConf.emoji}
+          <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-bold border ${typeBadge}`}>
+            {tc.emoji}
           </div>
         </div>
       )}
 
       <div className="flex flex-col flex-1 p-4 gap-3">
-        {/* Title + domain */}
+        {/* Title */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
             {item.title}
           </p>
-          <p className="mt-0.5 text-xs truncate" style={{ color: "var(--muted)" }}>{domain}</p>
+          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 truncate">{domain}</p>
         </div>
 
-        {/* Status + type badges */}
+        {/* Badges */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${statusConf.pill}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${statusConf.dot}`} />
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${sc.badge}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
             {item.processingStatus}
           </span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${typeConf.color}`}>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize border ${typeBadge}`}>
             {item.contentType.replace(/_/g, " ")}
           </span>
           {item.contentSize === "large" && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 dark:text-violet-300 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
               large
             </span>
           )}
         </div>
 
         {/* Date + actions */}
-        <div className="flex items-center justify-between pt-1" style={{ borderTop: "1px solid var(--border)" }}>
-          <span className="text-xs" style={{ color: "var(--muted)" }}>{dateStr}</span>
+        <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">{dateStr}</span>
           <div className="flex items-center gap-0.5">
-            {/* External link */}
             {!isUploaded && (
               <a href={item.url} target="_blank" rel="noopener noreferrer"
-                className="p-1.5 rounded-lg transition-colors hover:text-foreground hover:bg-surface-2 dark:hover:bg-white/5"
-                style={{ color: "var(--muted)" }} title="Open original">
+                className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Open original">
                 <ExternalLinkIcon className="h-3.5 w-3.5" />
               </a>
             )}
-            {/* View */}
             <Link href={`/content/${item._id}`}
-              className="p-1.5 rounded-lg transition-colors hover:text-violet-500 hover:bg-violet-500/8"
-              style={{ color: "var(--muted)" }} title="View">
+              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+              title="View">
               <EyeIcon className="h-3.5 w-3.5" />
             </Link>
-            {/* Download */}
             {downloadHref && (
               <a href={downloadHref}
-                className="p-1.5 rounded-lg transition-colors hover:text-blue-400 hover:bg-blue-500/8"
-                style={{ color: "var(--muted)" }} title="Download">
+                className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                title="Download">
                 <DownloadIcon className="h-3.5 w-3.5" />
               </a>
             )}
-            {/* Chat */}
             {item.contentSize === "large" && item.processingStatus === "completed" && (
               <Link href={`/content/${item._id}/chat`}
-                className="p-1.5 rounded-lg transition-colors text-violet-500 hover:text-violet-400 hover:bg-violet-500/10"
+                className="p-1.5 rounded-lg text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
                 title="Chat">
                 <ChatIcon className="h-3.5 w-3.5" />
               </Link>
             )}
-            {/* Delete */}
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="p-1.5 rounded-lg transition-colors hover:text-red-500 hover:bg-red-500/8"
-              style={{ color: "var(--muted)" }} title="Delete"
-            >
+              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              title="Delete">
               <TrashIcon className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -224,17 +189,11 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
   );
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
 function StarIcon({ filled, className }: { filled: boolean; className?: string }) {
   return filled ? (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-    </svg>
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
   ) : (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-    </svg>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
   );
 }
 function ExternalLinkIcon({ className }: { className?: string }) {

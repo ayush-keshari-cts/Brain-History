@@ -6,28 +6,27 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import DeleteModal from "@/components/ui/DeleteModal";
 
-const TYPE_CONFIG: Record<string, { emoji: string; color: string }> = {
-  tweet:         { emoji: "𝕏",  color: "bg-sky-500/10 text-sky-400" },
-  youtube_video: { emoji: "▶",  color: "bg-red-500/10 text-red-400" },
-  youtube_music: { emoji: "♪",  color: "bg-red-500/10 text-red-400" },
-  instagram:     { emoji: "◈",  color: "bg-pink-500/10 text-pink-400" },
-  blog:          { emoji: "✦",  color: "bg-emerald-500/10 text-emerald-400" },
-  pdf:           { emoji: "⬛", color: "bg-orange-500/10 text-orange-400" },
-  image:         { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400" },
-  screenshot:    { emoji: "⬡",  color: "bg-violet-500/10 text-violet-400" },
-  website:       { emoji: "◉",  color: "bg-blue-500/10 text-blue-400" },
-  github:        { emoji: "⊛",  color: "bg-zinc-500/10 text-zinc-400" },
-  reddit:        { emoji: "◎",  color: "bg-orange-500/10 text-orange-400" },
-  linkedin:      { emoji: "in", color: "bg-blue-500/10 text-blue-400" },
-  spotify:       { emoji: "♫",  color: "bg-green-500/10 text-green-400" },
-  unknown:       { emoji: "◇",  color: "bg-zinc-500/10 text-zinc-400" },
+const TYPE_CONFIG: Record<string, { emoji: string; badge: string }> = {
+  tweet:         { emoji: "𝕏",  badge: "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20" },
+  youtube_video: { emoji: "▶",  badge: "bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  youtube_music: { emoji: "♪",  badge: "bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  instagram:     { emoji: "◈",  badge: "bg-pink-50 text-pink-700 border-pink-100 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20" },
+  blog:          { emoji: "✦",  badge: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
+  pdf:           { emoji: "⬛", badge: "bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" },
+  image:         { emoji: "⬡",  badge: "bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20" },
+  screenshot:    { emoji: "⬡",  badge: "bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20" },
+  website:       { emoji: "◉",  badge: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
+  github:        { emoji: "⊛",  badge: "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-700/30 dark:text-zinc-300 dark:border-zinc-600/30" },
+  reddit:        { emoji: "◎",  badge: "bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" },
+  spotify:       { emoji: "♫",  badge: "bg-green-50 text-green-700 border-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" },
+  unknown:       { emoji: "◇",  badge: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-700/30 dark:text-zinc-400 dark:border-zinc-600/30" },
 };
 
-const STATUS_CONFIG: Record<string, { dot: string; pill: string }> = {
-  pending:    { dot: "bg-amber-400 animate-pulse",  pill: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  processing: { dot: "bg-blue-400 animate-pulse",   pill: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-  completed:  { dot: "bg-emerald-400",              pill: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  failed:     { dot: "bg-red-400",                  pill: "bg-red-500/10 text-red-400 border-red-500/20" },
+const STATUS_CONFIG: Record<string, { dot: string; badge: string }> = {
+  pending:    { dot: "bg-amber-400 animate-pulse",  badge: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" },
+  processing: { dot: "bg-blue-400 animate-pulse",   badge: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
+  completed:  { dot: "bg-emerald-400",              badge: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
+  failed:     { dot: "bg-red-400",                  badge: "bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,10 +61,9 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
   const isLarge     = content.contentSize === "large";
   const isCompleted = content.processingStatus === "completed";
-  const typeConf    = TYPE_CONFIG[content.contentType] ?? TYPE_CONFIG.unknown;
-  const statusConf  = STATUS_CONFIG[content.processingStatus] ?? STATUS_CONFIG.completed;
-
-  const savedDate = content.savedAt
+  const tc          = TYPE_CONFIG[content.contentType] ?? TYPE_CONFIG.unknown;
+  const sc          = STATUS_CONFIG[content.processingStatus] ?? STATUS_CONFIG.completed;
+  const savedDate   = content.savedAt
     ? new Date(content.savedAt).toLocaleDateString(undefined, { dateStyle: "long" })
     : "";
 
@@ -96,126 +94,91 @@ export default function ContentDetailView({ content }: { content: Record<string,
   return (
     <>
     {showDeleteModal && (
-      <DeleteModal
-        title={content.title}
-        loading={deleting}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setShowDeleteModal(false)}
-      />
+      <DeleteModal title={content.title} loading={deleting} onConfirm={handleDeleteConfirm} onCancel={() => setShowDeleteModal(false)} />
     )}
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
 
       {/* Back */}
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm transition-colors hover:text-foreground"
-        style={{ color: "var(--muted)" }}
-      >
+      <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
         <ChevronLeftIcon className="h-4 w-4" />
         Library
       </Link>
 
-      {/* ── Media viewer ──────────────────────────────────────────────────── */}
+      {/* Media viewer */}
       {showViewer && viewerFileUrl && (
-        <MediaViewer
-          fileUrl={viewerFileUrl}
-          downloadUrl={downloadUrl ?? "#"}
-          isImage={isImage}
-          isPdf={isPdf}
-          isAudio={isAudio}
-          isVideo={isVideo}
-          filename={content.title}
-        />
+        <MediaViewer fileUrl={viewerFileUrl} downloadUrl={downloadUrl ?? "#"}
+          isImage={isImage} isPdf={isPdf} isAudio={isAudio} isVideo={isVideo} filename={content.title} />
       )}
 
-      {/* Fallback thumbnail for non-viewable URL content */}
+      {/* Fallback thumbnail */}
       {!showViewer && !isUploaded && content.thumbnail && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={content.thumbnail} alt="" className="w-full max-h-64 object-cover rounded-2xl" />
       )}
 
-      {/* ── Header card ───────────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5 space-y-4"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      {/* Detail card */}
+      <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-5 space-y-4 shadow-sm">
 
-        {/* Title row */}
         <div className="flex items-start gap-3">
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-base font-bold shrink-0 mt-0.5 ${typeConf.color}`}
-            style={{ border: "1px solid var(--border)" }}>
-            {typeConf.emoji}
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-base font-bold shrink-0 mt-0.5 border ${tc.badge}`}>
+            {tc.emoji}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
-              <h1 className="flex-1 text-xl font-bold text-foreground leading-snug">{content.title}</h1>
-              <button
-                onClick={handleFavourite}
-                disabled={favLoading}
+              <h1 className="flex-1 text-xl font-bold text-zinc-900 dark:text-zinc-100 leading-snug">{content.title}</h1>
+              <button onClick={handleFavourite} disabled={favLoading}
                 title={favourite ? "Remove from favourites" : "Add to favourites"}
-                className="shrink-0 p-1.5 rounded-xl transition-all hover:bg-amber-500/10 disabled:opacity-50"
-              >
-                <StarIcon filled={favourite} className={`h-5 w-5 ${favourite ? "text-amber-400" : "text-muted"}`} />
+                className="shrink-0 p-1.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors disabled:opacity-50">
+                <StarIcon filled={favourite} className={`h-5 w-5 ${favourite ? "text-amber-400" : "text-zinc-300 dark:text-zinc-600"}`} />
               </button>
             </div>
             {content.description && (
-              <p className="mt-1.5 text-sm leading-relaxed line-clamp-3" style={{ color: "var(--muted)" }}>
-                {content.description}
-              </p>
+              <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-3">{content.description}</p>
             )}
           </div>
         </div>
 
         {/* Badges */}
         <div className="flex flex-wrap gap-2">
-          <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${statusConf.pill}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${statusConf.dot}`} />
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${sc.badge}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
             {content.processingStatus}
           </span>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${typeConf.color}`}
-            style={{ border: "1px solid var(--border)" }}>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize border ${tc.badge}`}>
             {content.contentType?.replace(/_/g, " ")}
           </span>
           {isLarge && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-medium">
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
               large document
             </span>
           )}
           {isUploaded && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-teal-50 text-teal-700 border border-teal-100 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/20">
               uploaded
             </span>
           )}
           {content.embeddingsCount > 0 && (
-            <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-              style={{ background: "var(--surface-2)", color: "var(--muted)", border: "1px solid var(--border)" }}>
-              {content.embeddingsCount} chunks indexed
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
+              {content.embeddingsCount} chunks
             </span>
           )}
         </div>
 
         {/* Meta */}
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs pt-1"
-          style={{ borderTop: "1px solid var(--border)" }}>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs pt-2 border-t border-zinc-100 dark:border-zinc-800">
           {content.author && (
-            <>
-              <dt className="font-medium" style={{ color: "var(--muted)" }}>Author</dt>
-              <dd className="text-foreground truncate">{content.author}</dd>
-            </>
+            <><dt className="font-medium text-zinc-400 dark:text-zinc-500">Author</dt><dd className="text-zinc-700 dark:text-zinc-300 truncate">{content.author}</dd></>
           )}
           {savedDate && (
-            <>
-              <dt className="font-medium" style={{ color: "var(--muted)" }}>Saved</dt>
-              <dd className="text-foreground">{savedDate}</dd>
-            </>
+            <><dt className="font-medium text-zinc-400 dark:text-zinc-500">Saved</dt><dd className="text-zinc-700 dark:text-zinc-300">{savedDate}</dd></>
           )}
           {!isUploaded && (
-            <>
-              <dt className="font-medium" style={{ color: "var(--muted)" }}>Source</dt>
-              <dd className="truncate">
-                <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 hover:underline">
-                  {(() => { try { return new URL(content.url).hostname.replace(/^www\./, ""); } catch { return content.url; } })()}
-                </a>
-              </dd>
-            </>
+            <><dt className="font-medium text-zinc-400 dark:text-zinc-500">Source</dt>
+            <dd className="truncate">
+              <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 hover:underline">
+                {(() => { try { return new URL(content.url).hostname.replace(/^www\./, ""); } catch { return content.url; } })()}
+              </a>
+            </dd></>
           )}
         </dl>
 
@@ -223,8 +186,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
         {Array.isArray(content.tags) && content.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {content.tags.map((tag: string) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                style={{ background: "var(--surface-2)", color: "var(--muted)", border: "1px solid var(--border)" }}>
+              <span key={tag} className="text-xs px-2 py-0.5 rounded-lg font-medium bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
                 #{tag}
               </span>
             ))}
@@ -234,76 +196,52 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
       {/* Processing error */}
       {content.processingStatus === "failed" && content.processingError && (
-        <div className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm text-red-400 bg-red-500/8 border border-red-500/20">
-          <span className="h-2 w-2 rounded-full bg-red-400 shrink-0 mt-1" />
-          <div>
-            <strong className="font-semibold">Indexing failed:</strong>{" "}
-            {content.processingError}
-          </div>
+        <div className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
+          <span className="h-2 w-2 rounded-full bg-red-400 shrink-0 mt-0.5" />
+          <div><strong className="font-semibold">Indexing failed:</strong> {content.processingError}</div>
         </div>
       )}
 
       {/* Notes */}
       {content.notes && (
-        <div className="rounded-2xl p-4 space-y-2"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Notes</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{content.notes}</p>
+        <div className="rounded-2xl p-4 space-y-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Notes</p>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{content.notes}</p>
         </div>
       )}
 
-      {/* ── Actions ───────────────────────────────────────────────────────── */}
+      {/* Actions */}
       <div className="flex flex-wrap gap-3">
         {!isUploaded && (
-          <a
-            href={content.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-violet-500/30 hover:text-violet-400"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <a href={content.url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400 transition-all">
             <ExternalLinkIcon className="h-4 w-4" />
             Open original
           </a>
         )}
-
         {downloadUrl && (
-          <a
-            href={downloadUrl}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-violet-500/30 hover:text-violet-400"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <a href={downloadUrl}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400 transition-all">
             <DownloadIcon className="h-4 w-4" />
             Download
           </a>
         )}
-
         {isLarge && isCompleted && (
-          <Link
-            href={`/content/${content._id}/chat`}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20"
-          >
+          <Link href={`/content/${content._id}/chat`}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">
             <ChatIcon className="h-4 w-4" />
             Chat with content
           </Link>
         )}
-
         {!isLarge && isCompleted && (
-          <Link
-            href="/search"
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-violet-400 transition-all"
-            style={{ background: "var(--surface)", border: "1px solid rgba(139,92,246,0.25)" }}
-          >
+          <Link href="/search"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/15 transition-all">
             <SearchIcon className="h-4 w-4" />
-            Find related content
+            Find related
           </Link>
         )}
-
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-400 transition-all hover:bg-red-500/10"
-          style={{ background: "var(--surface)", border: "1px solid rgba(239,68,68,0.2)" }}
-        >
+        <button onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-white dark:bg-zinc-900 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
           <TrashIcon className="h-4 w-4" />
           Delete
         </button>
@@ -315,126 +253,86 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
 // ─── Media Viewer ─────────────────────────────────────────────────────────────
 
-function MediaViewer({
-  fileUrl, downloadUrl, isImage, isPdf, isAudio, isVideo, filename,
-}: {
-  fileUrl: string;
-  downloadUrl: string;
-  isImage: boolean;
-  isPdf: boolean;
-  isAudio: boolean;
-  isVideo: boolean;
-  filename: string;
+function MediaViewer({ fileUrl, downloadUrl, isImage, isPdf, isAudio, isVideo, filename }: {
+  fileUrl: string; downloadUrl: string; isImage: boolean; isPdf: boolean; isAudio: boolean; isVideo: boolean; filename: string;
 }) {
-  const headerStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0.5rem 1rem",
-    borderBottom: "1px solid var(--border)",
-  };
+  const baseCard = "rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800";
+  const header   = "flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800";
 
-  if (isPdf) {
-    return (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div style={headerStyle}>
-          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>PDF Preview</span>
-          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-            <DownloadIcon className="h-3.5 w-3.5" /> Download
-          </a>
-        </div>
-        <iframe src={fileUrl} title={filename} className="w-full" style={{ height: "72vh" }} />
+  if (isPdf) return (
+    <div className={baseCard}>
+      <div className={header}>
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">PDF Preview</span>
+        <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:underline">
+          <DownloadIcon className="h-3.5 w-3.5" /> Download
+        </a>
       </div>
-    );
-  }
+      <iframe src={fileUrl} title={filename} className="w-full" style={{ height: "72vh" }} />
+    </div>
+  );
 
-  if (isImage) {
-    return (
-      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div style={headerStyle}>
-          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>Image Preview</span>
-          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-            <DownloadIcon className="h-3.5 w-3.5" /> Download
-          </a>
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={fileUrl} alt={filename} className="w-full max-h-[70vh] object-contain" style={{ background: "var(--surface-2)" }} />
+  if (isImage) return (
+    <div className={baseCard}>
+      <div className={header}>
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Image Preview</span>
+        <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:underline">
+          <DownloadIcon className="h-3.5 w-3.5" /> Download
+        </a>
       </div>
-    );
-  }
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={fileUrl} alt={filename} className="w-full max-h-[70vh] object-contain bg-zinc-50 dark:bg-zinc-800" />
+    </div>
+  );
 
-  if (isAudio) {
-    return (
-      <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 flex items-center justify-center text-2xl"
-            style={{ border: "1px solid var(--border)" }}>
-            🎵
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{filename}</p>
-            <p className="text-xs" style={{ color: "var(--muted)" }}>Audio file</p>
-          </div>
-          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors shrink-0">
-            <DownloadIcon className="h-3.5 w-3.5" /> Download
-          </a>
+  if (isAudio) return (
+    <div className="rounded-2xl p-5 space-y-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-2xl bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20 flex items-center justify-center text-2xl shrink-0">🎵</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{filename}</p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">Audio file</p>
         </div>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <audio controls className="w-full" src={fileUrl}>
-          Your browser does not support the audio element.
-        </audio>
+        <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:underline shrink-0">
+          <DownloadIcon className="h-3.5 w-3.5" /> Download
+        </a>
       </div>
-    );
-  }
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio controls className="w-full" src={fileUrl}>Your browser does not support the audio element.</audio>
+    </div>
+  );
 
-  if (isVideo) {
-    return (
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-        <div style={{ ...headerStyle, background: "var(--sidebar-bg)" }}>
-          <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>Video Preview</span>
-          <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-            <DownloadIcon className="h-3.5 w-3.5" /> Download
-          </a>
-        </div>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video controls className="w-full max-h-[70vh] bg-black" src={fileUrl}>
-          Your browser does not support the video element.
-        </video>
+  if (isVideo) return (
+    <div className={`${baseCard} bg-zinc-950 dark:bg-zinc-950 border-zinc-800`}>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
+        <span className="text-xs font-medium text-zinc-400">Video Preview</span>
+        <a href={downloadUrl} className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:underline">
+          <DownloadIcon className="h-3.5 w-3.5" /> Download
+        </a>
       </div>
-    );
-  }
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video controls className="w-full max-h-[70vh] bg-black" src={fileUrl}>Your browser does not support the video element.</video>
+    </div>
+  );
 
   return (
-    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-      <div className="h-12 w-12 rounded-2xl bg-violet-500/8 flex items-center justify-center text-2xl shrink-0"
-        style={{ border: "1px solid var(--border)" }}>
-        📁
-      </div>
+    <div className="rounded-2xl p-5 flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+      <div className="h-12 w-12 rounded-2xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 flex items-center justify-center text-2xl shrink-0">📁</div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">{filename}</p>
-        <p className="text-xs" style={{ color: "var(--muted)" }}>Uploaded document</p>
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{filename}</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">Uploaded document</p>
       </div>
-      <a
-        href={downloadUrl}
-        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20 shrink-0"
-      >
+      <a href={downloadUrl} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20 shrink-0">
         <DownloadIcon className="h-4 w-4" /> Download
       </a>
     </div>
   );
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
 function StarIcon({ filled, className }: { filled: boolean; className?: string }) {
   return filled ? (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-    </svg>
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
   ) : (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-    </svg>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
   );
 }
 function ChevronLeftIcon({ className }: { className?: string }) {
