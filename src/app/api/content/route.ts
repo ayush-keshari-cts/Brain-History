@@ -157,6 +157,7 @@ export async function GET(req: NextRequest) {
     const page        = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
     const limit       = Math.min(50, parseInt(searchParams.get("limit") ?? "20", 10));
     const contentType = searchParams.get("type");
+    const favourite   = searchParams.get("favourite") === "1";
     const skip        = (page - 1) * limit;
 
     await connectDB();
@@ -164,7 +165,8 @@ export async function GET(req: NextRequest) {
     const filter: Record<string, unknown> = {
       userId: new mongoose.Types.ObjectId(userId),
     };
-    if (contentType) filter.contentType = contentType;
+    if (contentType)  filter.contentType  = contentType;
+    if (favourite)    filter.isFavourite  = true;
 
     const [items, total] = await Promise.all([
       Content.find(filter)

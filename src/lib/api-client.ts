@@ -21,6 +21,8 @@ export interface ContentItem {
   contentSize: "small" | "large";
   tags: string[];
   notes?: string;
+  isFavourite: boolean;
+  fileUrl?: string;
   embeddingsCount: number;
   rawTextLength?: number;
   processingError?: string;
@@ -71,7 +73,11 @@ export const api = {
   /** List saved content with optional type filter + pagination */
   listContent: (page = 1, limit = 20, type?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (type) params.set("type", type);
+    if (type === "__fav__") {
+      params.set("favourite", "1");
+    } else if (type) {
+      params.set("type", type);
+    }
     return apiFetch<ContentListResponse>(`/api/content?${params}`);
   },
 
@@ -84,6 +90,10 @@ export const api = {
   /** Delete a content item */
   deleteContent: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/content/${id}`, { method: "DELETE" }),
+
+  /** Toggle isFavourite on a content item */
+  toggleFavourite: (id: string) =>
+    apiFetch<{ isFavourite: boolean }>(`/api/content/${id}/favourite`, { method: "PATCH" }),
 
   /** Run semantic search */
   search: (query: string, contentTypes?: string[], limit = 10) =>

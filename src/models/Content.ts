@@ -32,6 +32,11 @@ export interface IContent extends Document {
   // User annotations
   tags: string[];
   notes?: string;
+  isFavourite: boolean;
+
+  // Original uploaded file (set only for platform === "upload")
+  fileUrl?:            string;   // Cloudinary secure_url
+  cloudinaryPublicId?: string;   // Cloudinary public_id (used to delete the file)
 
   // Indexing / pipeline state
   processingStatus: ProcessingStatus;
@@ -76,8 +81,11 @@ const ContentSchema = new Schema<IContent>(
       required: true,
     },
 
-    tags:  { type: [String], default: [] },
-    notes: String,
+    tags:                { type: [String], default: [] },
+    notes:               String,
+    isFavourite:         { type: Boolean, default: false },
+    fileUrl:             String,
+    cloudinaryPublicId:  String,
 
     processingStatus: {
       type: String,

@@ -3,12 +3,13 @@
  * DELETE /api/content/[id]  – remove from MongoDB + Atlas vectors + chat sessions
  */
 
-import { NextRequest, NextResponse }  from "next/server";
-import { auth }                       from "@/auth";
-import connectDB                      from "@/lib/db/mongoose";
-import { Content, ChatSession }       from "@/models";
-import { deleteContentVectors }       from "@/lib/db/atlasVectorService";
-import mongoose                       from "mongoose";
+import { NextRequest, NextResponse }        from "next/server";
+import { auth }                             from "@/auth";
+import connectDB                            from "@/lib/db/mongoose";
+import { Content, ChatSession }             from "@/models";
+import { deleteContentVectors }             from "@/lib/db/atlasVectorService";
+import { deleteFromCloudinary, getResourceType } from "@/lib/cloudinary";
+import mongoose                             from "mongoose";
 
 // Next.js 15+ — params is a Promise
 type Params = { params: Promise<{ id: string }> };
@@ -69,8 +70,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const userObjId  = new mongoose.Types.ObjectId(userId);
 
     const existing = await Content.findOne({ _id: contentId, userId: userObjId })
-      .select("_id")
-      .lean();
+      .select("_id cloudinaryPublicId contentType")
+      .lean() as { _id: mongoose.Types.ObjectId; cloudinaryPublicId?: string; contentType?: string } | null;
 
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -82,6 +83,18 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       ChatSession.deleteMany({ contentId }),
       deleteContentVectors(userId, id),
     ]);
+
+    // Best-effort Cloudinary cleanup (don't fail the request if this errors)
+    if (existing.cloudinaryPublicId) {
+      const resourceType = getResourceType(
+        existing.contentType === "image"        ? "image/"  :
+        existing.contentType === "spotify"      ? "audio/"  :
+        existing.contentType === "youtube_video" ? "video/" : "raw/"
+      );
+      deleteFromCloudinary(existing.cloudinaryPublicId, resourceType).catch(
+        (err: unknown) => console.warn("[Delete] Cloudinary cleanup failed:", err)
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

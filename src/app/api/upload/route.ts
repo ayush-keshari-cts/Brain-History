@@ -2,7 +2,7 @@
  * POST /api/upload  — Upload a local file and index it
  *
  * Body: multipart/form-data with a "file" field.
- * Max size enforced: 50 MB.
+ * Max size: 50 MB.
  *
  * Supported file types:
  *   PDF         (.pdf)              — full text extraction
@@ -11,44 +11,51 @@
  *   Audio       (.mp3 .wav .m4a .ogg .flac)
  *   Video       (.mp4 .webm .mov .avi)
  *
- * Returns same shape as POST /api/content.
+ * Files are stored in Cloudinary under:  brainhistory/{userId}/{contentId}
+ * Returns same shape as POST /api/content plus fileUrl.
  */
 
-import { NextRequest, NextResponse }   from "next/server";
-import { auth }                         from "@/auth";
-import connectDB                        from "@/lib/db/mongoose";
-import { Content }                      from "@/models";
-import { getEmbeddingService }          from "@/lib/embeddings";
+import { NextRequest, NextResponse }                from "next/server";
+import { auth }                                      from "@/auth";
+import connectDB                                     from "@/lib/db/mongoose";
+import { Content }                                   from "@/models";
+import { getEmbeddingService }                       from "@/lib/embeddings";
 import { ContentType, ContentSize, ProcessingStatus } from "@/types";
-import type { ExtractedContent, PlatformMetadata } from "@/types";
-import mongoose                         from "mongoose";
-import { v4 as uuidv4 }                 from "uuid";
-import sharp                            from "sharp";
-import { parsePdfBuffer, parseWordBuffer } from "@/lib/extractors/document-parser";
+import type { ExtractedContent, PlatformMetadata }   from "@/types";
+import mongoose                                      from "mongoose";
+import { v4 as uuidv4 }                              from "uuid";
+import sharp                                         from "sharp";
+import { parsePdfBuffer, parseWordBuffer }           from "@/lib/extractors/document-parser";
+import { uploadToCloudinary, getResourceType }       from "@/lib/cloudinary";
 
 // ─── MIME helpers ─────────────────────────────────────────────────────────────
 
 function mimeToContentType(mime: string, filename: string): ContentType {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  if (mime === "application/pdf" || ext === "pdf")                          return ContentType.PDF;
-  if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      || mime === "application/msword"
-      || ext === "docx" || ext === "doc")                                   return ContentType.PDF;  // treat as PDF type
-  if (mime.startsWith("image/"))                                            return ContentType.IMAGE;
-  if (mime.startsWith("audio/"))                                            return ContentType.SPOTIFY;
-  if (mime.startsWith("video/"))                                            return ContentType.YOUTUBE_VIDEO;
+  if (mime === "application/pdf" || ext === "pdf")                                       return ContentType.PDF;
+  if (
+    mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mime === "application/msword" || ext === "docx" || ext === "doc"
+  )                                                                                       return ContentType.PDF;
+  if (mime.startsWith("image/"))                                                          return ContentType.IMAGE;
+  if (mime.startsWith("audio/"))                                                          return ContentType.SPOTIFY;
+  if (mime.startsWith("video/"))                                                          return ContentType.YOUTUBE_VIDEO;
   return ContentType.UNKNOWN;
 }
 
 function isDocumentType(mime: string, filename: string): "pdf" | "docx" | "doc" | null {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   if (mime === "application/pdf" || ext === "pdf") return "pdf";
-  if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || ext === "docx") return "docx";
+  if (
+    mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    ext === "docx"
+  )
+    return "docx";
   if (mime === "application/msword" || ext === "doc") return "doc";
   return null;
 }
 
-// ─── Per-type processors ──────────────────────────────────────────────────────
+// ─── Per-type text extractors ─────────────────────────────────────────────────
 
 type ExtractResult = Pick<
   ExtractedContent,
@@ -60,10 +67,9 @@ async function processDocument(
   docType: "pdf" | "docx" | "doc",
   filename: string
 ): Promise<ExtractResult> {
-  const parsed = docType === "pdf"
+  const parsed   = docType === "pdf"
     ? await parsePdfBuffer(buffer)
     : await parseWordBuffer(buffer);
-
   const baseName = filename.replace(/\.(pdf|docx|doc)$/i, "");
   const title    = parsed.title || baseName;
 
@@ -75,9 +81,9 @@ async function processDocument(
     isLarge:     parsed.isLarge,
     metadata: {
       title,
-      author:        parsed.author    || undefined,
-      subject:       parsed.subject   || undefined,
-      keywords:      parsed.keywords  ?? [],
+      author:        parsed.author   || undefined,
+      subject:       parsed.subject  || undefined,
+      keywords:      parsed.keywords ?? [],
       pageCount:     parsed.pageCount ?? 0,
       body:          parsed.text,
       fileSizeBytes: buffer.byteLength,
@@ -113,6 +119,7 @@ function processMedia(buffer: Buffer, mime: string, filename: string): ExtractRe
       title:         filename,
       description:   `${kind} file`,
       body:          filename,
+      fileSizeBytes: buffer.byteLength,
     } as PlatformMetadata,
   };
 }
@@ -149,7 +156,7 @@ export async function POST(req: NextRequest) {
     const contentType = mimeToContentType(mime, filename);
     const docType     = isDocumentType(mime, filename);
 
-    // ── Extract ───────────────────────────────────────────────────────────────
+    // ── 1. Extract text / metadata ────────────────────────────────────────────
     let extracted: ExtractResult;
     try {
       if (docType) {
@@ -170,13 +177,15 @@ export async function POST(req: NextRequest) {
     const fakeUrl     = `brainhistory://upload/${userId}/${uuidv4()}/${encodeURIComponent(filename)}`;
 
     await connectDB();
+    const userObjId = new mongoose.Types.ObjectId(userId);
 
+    // ── 2. Create Content doc ─────────────────────────────────────────────────
     const content = await Content.create({
-      userId:           new mongoose.Types.ObjectId(userId),
+      userId:           userObjId,
       url:              fakeUrl,
       contentType,
       platform:         "upload",
-      title:            extracted.title  || filename,
+      title:            extracted.title || filename,
       description:      extracted.description,
       author:           extracted.author,
       rawText:          extracted.rawText,
@@ -187,7 +196,28 @@ export async function POST(req: NextRequest) {
       processingStatus: ProcessingStatus.PENDING,
     });
 
-    // Kick off async embedding
+    const contentId = (content._id as mongoose.Types.ObjectId).toString();
+
+    // ── 3. Upload to Cloudinary (awaited so fileUrl is ready immediately) ──────
+    let fileUrl: string | undefined;
+    try {
+      const result = await uploadToCloudinary(buffer, {
+        folder:           `brainhistory/${userId}`,
+        publicId:         contentId,
+        resourceType:     getResourceType(mime),
+        originalFilename: filename,
+      });
+      fileUrl = result.secure_url;
+      await Content.findByIdAndUpdate(content._id, {
+        fileUrl:            result.secure_url,
+        cloudinaryPublicId: result.public_id,
+      });
+    } catch (err) {
+      // Non-fatal — content is still indexed, just no file preview
+      console.error("[Upload] Cloudinary upload failed for", contentId, err);
+    }
+
+    // ── 4. Kick off async embedding ────────────────────────────────────────────
     getEmbeddingService()
       .indexContent(
         content._id as mongoose.Types.ObjectId,
@@ -204,7 +234,7 @@ export async function POST(req: NextRequest) {
         }
       )
       .catch((err: unknown) => {
-        console.error("[Upload embed] failed for", content._id, err);
+        console.error("[Upload embed] failed for", contentId, err);
         Content.findByIdAndUpdate(content._id, {
           processingStatus: ProcessingStatus.FAILED,
           processingError:  String(err),
@@ -214,10 +244,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success:     true,
-        contentId:   (content._id as mongoose.Types.ObjectId).toString(),
+        contentId,
         contentType,
         title:       extracted.title || filename,
         isLarge:     contentSize === ContentSize.LARGE,
+        fileUrl,
         message:     "File uploaded and indexing started",
       },
       { status: 201 }

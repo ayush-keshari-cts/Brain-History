@@ -93,6 +93,7 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
           processingStatus: res.message === "Already saved" ? "completed" : "pending",
           contentSize:      res.isLarge ? "large" : "small",
           tags:             [],
+          isFavourite:      false,
           embeddingsCount:  0,
         });
         urlInputRef.current?.focus();
@@ -145,6 +146,8 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
         processingStatus: "pending",
         contentSize:      body.isLarge ? "large" : "small",
         tags:             [],
+        isFavourite:      false,
+        fileUrl:          body.fileUrl,
         embeddingsCount:  0,
       });
     } catch (err) {

@@ -70,6 +70,10 @@ export default function DashboardContent() {
     setTotal((t) => Math.max(0, t - 1));
   };
 
+  const handleUpdated = (updated: ContentItem) => {
+    setItems((prev) => prev.map((i) => (i._id === updated._id ? updated : i)));
+  };
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -108,7 +112,7 @@ export default function DashboardContent() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (
-              <ContentCard key={item._id} item={item} onDeleted={handleDeleted} />
+              <ContentCard key={item._id} item={item} onDeleted={handleDeleted} onUpdated={handleUpdated} />
             ))}
           </div>
 

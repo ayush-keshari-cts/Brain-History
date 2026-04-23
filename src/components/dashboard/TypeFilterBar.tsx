@@ -2,6 +2,7 @@
 
 const TYPES = [
   { value: undefined,       label: "All" },
+  { value: "__fav__",       label: "⭐ Favourites" },
   { value: "blog",          label: "Blog" },
   { value: "youtube_video", label: "YouTube" },
   { value: "tweet",         label: "Tweet" },
