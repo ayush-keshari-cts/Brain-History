@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api, type ContentItem } from "@/lib/api-client";
+import DeleteModal from "@/components/ui/DeleteModal";
 
 const TYPE_EMOJI: Record<string, string> = {
   tweet: "🐦", youtube_video: "📹", youtube_music: "🎵", instagram: "📸",
@@ -25,18 +26,18 @@ interface Props {
 }
 
 export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
-  const [deleting,   setDeleting]   = useState(false);
-  const [favLoading, setFavLoading] = useState(false);
+  const [deleting,     setDeleting]     = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [favLoading,   setFavLoading]   = useState(false);
 
-  const handleDelete = async () => {
-    if (!confirm(`Delete "${item.title}"?`)) return;
+  const handleDeleteConfirm = async () => {
     setDeleting(true);
     try {
       await api.deleteContent(item._id);
       onDeleted(item._id);
     } catch {
       setDeleting(false);
-      alert("Failed to delete. Please try again.");
+      setShowDeleteModal(false);
     }
   };
 
@@ -64,6 +65,15 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
   const dateStr = new Date(item.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
   return (
+    <>
+    {showDeleteModal && (
+      <DeleteModal
+        title={item.title}
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+    )}
     <div className={`relative flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-sm hover:shadow-md transition-shadow ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
 
       {/* Favourite star — top-right corner */}
@@ -145,14 +155,18 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
             )}
 
             {/* Delete */}
-            <button onClick={handleDelete}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Delete">
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              title="Delete"
+            >
               <TrashIcon className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -77,12 +77,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Delete from MongoDB (content + sessions) and Atlas vectors in parallel
+    // Delete MongoDB records first (critical)
     await Promise.all([
       Content.deleteOne({ _id: contentId }),
       ChatSession.deleteMany({ contentId }),
-      deleteContentVectors(userId, id),
     ]);
+
+    // Best-effort vector cleanup — don't fail the request if Pinecone is unreachable
+    deleteContentVectors(userId, id).catch(
+      (err: unknown) => console.warn("[Delete] Vector cleanup failed:", err)
+    );
 
     // Best-effort Cloudinary cleanup (don't fail the request if this errors)
     if (existing.cloudinaryPublicId) {

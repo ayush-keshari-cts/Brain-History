@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
+import DeleteModal from "@/components/ui/DeleteModal";
 
 const TYPE_EMOJI: Record<string, string> = {
   tweet: "🐦", youtube_video: "📹", youtube_music: "🎵", instagram: "📸",
@@ -22,9 +23,10 @@ const STATUS_STYLE: Record<string, string> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ContentDetailView({ content }: { content: Record<string, any> }) {
   const router = useRouter();
-  const [deleting,   setDeleting]   = useState(false);
-  const [favourite,  setFavourite]  = useState<boolean>(Boolean(content.isFavourite));
-  const [favLoading, setFavLoading] = useState(false);
+  const [deleting,         setDeleting]         = useState(false);
+  const [showDeleteModal,  setShowDeleteModal]  = useState(false);
+  const [favourite,        setFavourite]        = useState<boolean>(Boolean(content.isFavourite));
+  const [favLoading,       setFavLoading]       = useState(false);
 
   const isUploaded  = content.platform === "upload";
   const hasFile     = Boolean(content.fileUrl);
@@ -43,15 +45,14 @@ export default function ContentDetailView({ content }: { content: Record<string,
     ? new Date(content.savedAt).toLocaleDateString(undefined, { dateStyle: "long" })
     : "";
 
-  const handleDelete = async () => {
-    if (!confirm(`Delete "${content.title}"?`)) return;
+  const handleDeleteConfirm = async () => {
     setDeleting(true);
     try {
       await api.deleteContent(content._id);
       router.push("/dashboard");
     } catch {
       setDeleting(false);
-      alert("Delete failed.");
+      setShowDeleteModal(false);
     }
   };
 
@@ -69,6 +70,15 @@ export default function ContentDetailView({ content }: { content: Record<string,
   };
 
   return (
+    <>
+    {showDeleteModal && (
+      <DeleteModal
+        title={content.title}
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+    )}
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       {/* Back */}
       <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-foreground transition-colors">
@@ -183,9 +193,11 @@ export default function ContentDetailView({ content }: { content: Record<string,
           </Link>
         )}
 
-        <button onClick={handleDelete} disabled={deleting}
-          className="inline-flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 transition-colors">
-          <TrashIcon className="h-4 w-4" /> {deleting ? "Deleting…" : "Delete"}
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+        >
+          <TrashIcon className="h-4 w-4" /> Delete
         </button>
       </div>
 
@@ -197,6 +209,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
         </div>
       )}
     </div>
+    </>
   );
 }
 

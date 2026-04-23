@@ -1,17 +1,25 @@
 /**
  * Cloudinary v2 client
  *
- * - Images  → resource_type "image"
- * - Video / Audio → resource_type "video"  (Cloudinary handles both)
- * - PDFs, Word, other docs → resource_type "raw"  (served as-is, no conversion)
+ * Uses require() to access cloudinary.v2 — the package is CommonJS and
+ * Next.js's bundler cannot resolve named ES-module imports from it.
+ * "cloudinary" is listed in serverExternalPackages so it is never bundled.
+ *
+ * - Images        → resource_type "image"
+ * - Video / Audio → resource_type "video"
+ * - PDFs, Word    → resource_type "raw"  (served as-is, no conversion)
  *
  * Files are organised under:  brainhistory/{userId}/{contentId}
  */
 
-import { v2 as cloudinary } from "cloudinary";
-import type { UploadApiResponse } from "cloudinary";
+/* eslint-disable @typescript-eslint/no-require-imports */
+import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 
 type ResourceType = "image" | "video" | "raw" | "auto";
+
+// Access v2 via require to avoid CJS/ESM named-export resolution failures
+type CloudinaryV2 = typeof import("cloudinary").v2;
+const cloudinary: CloudinaryV2 = (require("cloudinary") as { v2: CloudinaryV2 }).v2;
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,7 +32,7 @@ cloudinary.config({
 
 /** Map a MIME type to the correct Cloudinary resource_type */
 export function getResourceType(mime: string): ResourceType {
-  if (mime.startsWith("image/"))                          return "image";
+  if (mime.startsWith("image/"))                               return "image";
   if (mime.startsWith("video/") || mime.startsWith("audio/")) return "video";
   return "raw";   // PDFs, Word docs, etc.
 }
@@ -51,14 +59,13 @@ export function uploadToCloudinary(
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
-        public_id:         publicId,
-        resource_type:     resourceType,
-        use_filename:      false,
-        overwrite:         true,
-        // Store the original filename in context so we can use it for downloads
-        context:           `original_filename=${originalFilename}`,
+        public_id:     publicId,
+        resource_type: resourceType,
+        use_filename:  false,
+        overwrite:     true,
+        context:       `original_filename=${originalFilename}`,
       },
-      (error, result) => {
+      (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
         if (error || !result) {
           reject(error ?? new Error("Cloudinary upload returned no result"));
         } else {
@@ -72,7 +79,7 @@ export function uploadToCloudinary(
 
 /**
  * Delete a file from Cloudinary by its public_id.
- * Needed when the user deletes a content item.
+ * Called when the user deletes a content item.
  */
 export async function deleteFromCloudinary(
   publicId:     string,
@@ -82,11 +89,10 @@ export async function deleteFromCloudinary(
 }
 
 /**
- * Build a download URL from a Cloudinary secure_url by injecting the
- * fl_attachment flag.
+ * Build a download URL from a Cloudinary secure_url by injecting fl_attachment.
  *
- * Original:  https://res.cloudinary.com/{cloud}/{type}/upload/v123/{id}
- * Download:  https://res.cloudinary.com/{cloud}/{type}/upload/fl_attachment/v123/{id}
+ * Original:  https://res.cloudinary.com/{cloud}/{type}/upload/v123/{public_id}
+ * Download:  https://res.cloudinary.com/{cloud}/{type}/upload/fl_attachment/v123/{public_id}
  */
 export function makeDownloadUrl(secureUrl: string): string {
   return secureUrl.replace("/upload/", "/upload/fl_attachment/");
