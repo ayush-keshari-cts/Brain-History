@@ -56,8 +56,18 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
     }
   };
 
-  const isPending = item.processingStatus === "pending" || item.processingStatus === "processing";
+  const isPending  = item.processingStatus === "pending" || item.processingStatus === "processing";
   const isUploaded = item.platform === "upload";
+
+  // Downloadable URL-based types (not streaming platforms)
+  const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
+  const canDownloadUrl   = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
+  const downloadHref     = isUploaded && item.fileUrl
+    ? `/api/files/${item._id}?download`
+    : canDownloadUrl
+      ? `/api/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.title)}`
+      : null;
+
   const emoji   = TYPE_EMOJI[item.contentType] ?? "🔗";
   const domain  = isUploaded
     ? "Uploaded file"
@@ -138,10 +148,13 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
               <EyeIcon className="h-3.5 w-3.5" />
             </Link>
 
-            {/* Download (uploaded files only) */}
-            {isUploaded && item.fileUrl && (
-              <a href={`/api/files/${item._id}?download`}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors" title="Download">
+            {/* Download — uploaded files (Cloudinary) or URL-based images/PDFs */}
+            {downloadHref && (
+              <a
+                href={downloadHref}
+                className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                title="Download"
+              >
                 <DownloadIcon className="h-3.5 w-3.5" />
               </a>
             )}

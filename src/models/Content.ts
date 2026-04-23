@@ -37,6 +37,7 @@ export interface IContent extends Document {
   // Original uploaded file (set only for platform === "upload")
   fileUrl?:            string;   // Cloudinary secure_url
   cloudinaryPublicId?: string;   // Cloudinary public_id (used to delete the file)
+  mimeType?:           string;   // e.g. "application/pdf", "image/jpeg" (for correct Content-Type when proxying)
 
   // Indexing / pipeline state
   processingStatus: ProcessingStatus;
@@ -86,6 +87,7 @@ const ContentSchema = new Schema<IContent>(
     isFavourite:         { type: Boolean, default: false },
     fileUrl:             String,
     cloudinaryPublicId:  String,
+    mimeType:            String,
 
     processingStatus: {
       type: String,

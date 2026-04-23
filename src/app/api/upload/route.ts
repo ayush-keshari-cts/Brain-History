@@ -213,6 +213,7 @@ export async function POST(req: NextRequest) {
       processingStatus:   ProcessingStatus.PENDING,
       fileUrl,
       cloudinaryPublicId,
+      mimeType: mime,
     });
 
     const contentId = (content._id as mongoose.Types.ObjectId).toString();

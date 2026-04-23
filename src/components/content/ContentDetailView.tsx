@@ -30,13 +30,28 @@ export default function ContentDetailView({ content }: { content: Record<string,
 
   const isUploaded  = content.platform === "upload";
   const hasFile     = Boolean(content.fileUrl);
-  const fileUrl     = hasFile ? (content.fileUrl as string) : null;
-  const downloadUrl = hasFile ? `/api/files/${content._id}?download` : null;
 
   const isImage = content.contentType === "image" || content.contentType === "screenshot";
   const isPdf   = content.contentType === "pdf";
   const isAudio = content.contentType === "spotify";
   const isVideo = content.contentType === "youtube_video" || content.contentType === "youtube_music";
+
+  // For uploaded files, always go through our proxy (sets correct Content-Type for PDFs).
+  // For URL-based PDFs / images, use the original URL directly in the viewer.
+  const viewerFileUrl: string | null = isUploaded && hasFile
+    ? `/api/files/${content._id}`
+    : (isPdf || isImage) && content.url
+      ? (content.url as string)
+      : null;
+  const showViewer = Boolean(viewerFileUrl);
+
+  // Download URL: uploaded → Cloudinary proxy; URL-based image/pdf → /api/download proxy
+  const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
+  const downloadUrl = isUploaded && hasFile
+    ? `/api/files/${content._id}?download`
+    : URL_DOWNLOADABLE.includes(content.contentType) && !isUploaded
+      ? `/api/download?url=${encodeURIComponent(content.url)}&filename=${encodeURIComponent(content.title)}`
+      : null;
 
   const isLarge     = content.contentSize === "large";
   const isCompleted = content.processingStatus === "completed";
@@ -86,10 +101,10 @@ export default function ContentDetailView({ content }: { content: Record<string,
       </Link>
 
       {/* ── Media viewer ────────────────────────────────────────────────────── */}
-      {isUploaded && hasFile && fileUrl && (
+      {showViewer && viewerFileUrl && (
         <MediaViewer
-          fileUrl={fileUrl}
-          downloadUrl={downloadUrl!}
+          fileUrl={viewerFileUrl}
+          downloadUrl={downloadUrl ?? "#"}
           isImage={isImage}
           isPdf={isPdf}
           isAudio={isAudio}
@@ -98,8 +113,8 @@ export default function ContentDetailView({ content }: { content: Record<string,
         />
       )}
 
-      {/* Fallback thumbnail for URL-based content */}
-      {!isUploaded && content.thumbnail && (
+      {/* Fallback thumbnail for URL-based content that has no viewer (e.g. tweet, video link) */}
+      {!showViewer && !isUploaded && content.thumbnail && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={content.thumbnail} alt="" className="w-full max-h-64 object-cover rounded-xl" />
       )}
@@ -172,7 +187,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
           </a>
         )}
 
-        {isUploaded && downloadUrl && (
+        {downloadUrl && (
           <a href={downloadUrl}
             className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm font-medium text-foreground hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
             <DownloadIcon className="h-4 w-4" /> Download original
