@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { auth } from "@/auth";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -33,12 +34,8 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Anti-flash: run before React hydrates to set theme class immediately */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(t===null&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`,
-          }}
-        />
+        {/* Anti-flash: runs before React hydrates to set theme class immediately */}
+        <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(t===null&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`}</Script>
         <SessionProvider session={session}>
           <ThemeProvider>
             {children}

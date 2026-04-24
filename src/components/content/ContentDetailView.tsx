@@ -86,7 +86,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
   const tc          = TYPE_CONFIG[content.contentType] ?? TYPE_CONFIG.unknown;
   const sc          = STATUS_CONFIG[content.processingStatus] ?? STATUS_CONFIG.completed;
   const savedDate   = content.savedAt
-    ? new Date(content.savedAt).toLocaleDateString(undefined, { dateStyle: "long" })
+    ? new Date(content.savedAt).toLocaleDateString("en-US", { dateStyle: "long" })
     : "";
 
   const handleDeleteConfirm = async () => {
