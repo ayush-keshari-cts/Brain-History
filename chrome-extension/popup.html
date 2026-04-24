@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=380" />
+  <title>BrainHistory</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: #ffffff;
+      color: #18181b;
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo {
+      width: 30px; height: 30px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-info h1 { font-size: 14px; font-weight: 700; color: #fff; }
+    .header-info p  { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+
+    /* ── Body wrapper ───────────────────────────────────── */
+    .body { padding: 14px 16px; }
+
+    /* ── URL row ────────────────────────────────────────── */
+    .url-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px;
+      background: #f4f4f5;
+      border-radius: 8px;
+      margin-bottom: 13px;
+    }
+    #favicon { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+    #url-display {
+      font-size: 11px; color: #71717a;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    /* ── User row ───────────────────────────────────────── */
+    .user-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      background: rgba(124,58,237,0.06);
+      border: 1px solid rgba(124,58,237,0.12);
+      border-radius: 6px;
+      margin-bottom: 13px;
+    }
+    #user-avatar {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #7c3aed; object-fit: cover; flex-shrink: 0;
+    }
+    #user-name { font-size: 11px; color: #7c3aed; font-weight: 500; }
+
+    /* ── Form fields ────────────────────────────────────── */
+    .field { margin-bottom: 11px; }
+    .field label {
+      display: block;
+      font-size: 10.5px; font-weight: 600;
+      color: #71717a;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .field .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: #a1a1aa; }
+    .field input, .field textarea {
+      width: 100%;
+      padding: 8px 10px;
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      font-size: 13px; color: #18181b;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+      resize: none;
+    }
+    .field input:focus, .field textarea:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+      background: #fff;
+    }
+    .field textarea { height: 56px; }
+
+    /* ── Save button ────────────────────────────────────── */
+    .btn-save {
+      width: 100%; padding: 10px 14px; margin-top: 14px;
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: opacity 0.15s, transform 0.1s;
+      font-family: inherit;
+      box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+    }
+    .btn-save:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(124,58,237,0.35); }
+    .btn-save:active:not(:disabled) { transform: translateY(0); }
+    .btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    .footer {
+      padding: 9px 16px;
+      border-top: 1px solid #f4f4f5;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .btn-link {
+      background: none; border: none;
+      color: #7c3aed; font-size: 11px; font-weight: 500;
+      cursor: pointer; font-family: inherit; padding: 0;
+    }
+    .btn-link:hover { text-decoration: underline; }
+    .footer-brand { font-size: 10px; color: #d4d4d8; }
+
+    /* ── Spinners ───────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2.5px solid #e4e4e7; border-top-color: #7c3aed;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    .spinner-sm {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+
+    /* ── State: loading ─────────────────────────────────── */
+    #state-loading {
+      padding: 40px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 11px;
+    }
+    #state-loading span { font-size: 12px; color: #a1a1aa; }
+
+    /* ── State: unsaveable page ─────────────────────────── */
+    #state-unsaveable {
+      padding: 28px 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+    }
+    .grey-icon {
+      width: 44px; height: 44px;
+      background: #f4f4f5; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── State: not authenticated ───────────────────────── */
+    #state-auth {
+      padding: 28px 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+    }
+    .auth-icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.08));
+      border: 1px solid rgba(124,58,237,0.18);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #state-auth h2 { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    #state-auth p  { font-size: 12px; color: #71717a; }
+
+    /* ── State: saved ───────────────────────────────────── */
+    #state-saved {
+      padding: 28px 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+    }
+    .saved-ring {
+      width: 46px; height: 46px;
+      background: #d1fae5; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #state-saved h2  { font-size: 14px; font-weight: 600; }
+    #saved-title     { font-size: 12px; color: #7c3aed; max-width: 280px; }
+    .saved-actions   { display: flex; gap: 8px; margin-top: 4px; }
+
+    /* ── State: error ───────────────────────────────────── */
+    #state-error {
+      padding: 28px 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+    }
+    .error-ring {
+      width: 46px; height: 46px;
+      background: #fee2e2; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #state-error h2  { font-size: 14px; font-weight: 600; }
+    #error-message   { font-size: 12px; color: #71717a; max-width: 280px; line-height: 1.5; }
+
+    /* ── Shared button helpers ──────────────────────────── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      color: #fff; border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+      box-shadow: 0 3px 8px rgba(124,58,237,0.25);
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-secondary {
+      display: inline-flex; align-items: center;
+      padding: 8px 14px;
+      border: 1px solid #e4e4e7;
+      background: #fff; color: #3f3f46;
+      border-radius: 8px;
+      font-size: 12px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: #f4f4f5; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     HEADER (always visible)
+══════════════════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-logo">
+    <!-- Brain / library icon -->
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+    </svg>
+  </div>
+  <div class="header-info">
+    <h1>BrainHistory</h1>
+    <p>Save to your library</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: LOADING
+══════════════════════════════════════════════════════ -->
+<div id="state-loading">
+  <div class="spinner"></div>
+  <span>Checking session…</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: UNSAVEABLE PAGE (chrome://, about:, etc.)
+══════════════════════════════════════════════════════ -->
+<div id="state-unsaveable" class="hidden">
+  <div class="grey-icon">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+    </svg>
+  </div>
+  <h2 style="font-size:14px;font-weight:600;">Can't save this page</h2>
+  <p style="font-size:12px;color:#71717a;">Navigate to a web page first,<br>then click the extension.</p>
+  <button class="btn-primary" id="open-app-btn" style="margin-top:4px;">
+    Open BrainHistory
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: NOT AUTHENTICATED
+══════════════════════════════════════════════════════ -->
+<div id="state-auth" class="hidden">
+  <div class="auth-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  </div>
+  <h2>Sign in to save</h2>
+  <p>You need to be signed in to<br>save content to BrainHistory.</p>
+  <button class="btn-primary" id="signin-btn" style="margin-top:4px;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+    </svg>
+    Open BrainHistory &amp; Sign In
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: SAVE FORM
+══════════════════════════════════════════════════════ -->
+<div id="state-form" class="hidden">
+  <div class="body">
+
+    <!-- Signed-in user -->
+    <div class="user-row">
+      <img id="user-avatar" src="" alt="" style="display:none" />
+      <span id="user-name">Signed in</span>
+    </div>
+
+    <!-- Current page URL -->
+    <div class="url-row">
+      <img id="favicon" src="" alt="" onerror="this.style.display='none'" />
+      <span id="url-display" title=""></span>
+    </div>
+
+    <!-- Title -->
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="input-title" placeholder="Page title…" autocomplete="off" />
+    </div>
+
+    <!-- Tags -->
+    <div class="field">
+      <label>Tags <span class="opt">(comma-separated, optional)</span></label>
+      <input type="text" id="input-tags" placeholder="react, tutorial, design…" autocomplete="off" />
+    </div>
+
+    <!-- Notes -->
+    <div class="field">
+      <label>Notes <span class="opt">(optional)</span></label>
+      <textarea id="input-notes" placeholder="Add a quick note about this page…"></textarea>
+    </div>
+
+    <!-- Save button -->
+    <button class="btn-save" id="save-btn">
+      <span class="spinner-sm hidden" id="save-spinner"></span>
+      <svg id="save-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+      </svg>
+      <span id="save-btn-text">Save to BrainHistory</span>
+    </button>
+  </div>
+
+  <div class="footer">
+    <button class="btn-link" id="view-library-btn">View Library →</button>
+    <span class="footer-brand">BrainHistory</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: SAVED SUCCESS
+══════════════════════════════════════════════════════ -->
+<div id="state-saved" class="hidden">
+  <div class="saved-ring">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 13l4 4L19 7"/>
+    </svg>
+  </div>
+  <h2>Saved!</h2>
+  <p id="saved-title"></p>
+  <div class="saved-actions">
+    <button class="btn-secondary" id="save-another-btn">Save another</button>
+    <button class="btn-primary" id="view-saved-btn">View Library</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     STATE: ERROR
+══════════════════════════════════════════════════════ -->
+<div id="state-error" class="hidden">
+  <div class="error-ring">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </div>
+  <h2>Failed to save</h2>
+  <p id="error-message"></p>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-secondary" id="retry-btn">Try again</button>
+    <button class="btn-primary" id="error-signin-btn">Sign in</button>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
