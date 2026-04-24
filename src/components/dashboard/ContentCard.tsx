@@ -533,6 +533,10 @@ function FolderIcon({ className }: { className?: string }) {
   );
 }
 
+function CollectionIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.25 2.25 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg>;
+}
+
 // ─── Collection picker dropdown ───────────────────────────────────────────────
 
 function CollectionPickerDropdown({
@@ -568,7 +572,13 @@ function CollectionPickerDropdown({
               onClick={(e) => { e.stopPropagation(); onToggle(col._id, !inCol); }}
               className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              <span className="text-base leading-none">{col.emoji}</span>
+              <span className="h-5 w-5 shrink-0 flex items-center justify-center rounded bg-violet-50 dark:bg-violet-500/10">
+                {col.emoji && col.emoji !== "brain" ? (
+                  <span className="text-sm leading-none">{col.emoji}</span>
+                ) : (
+                  <CollectionIcon className="h-3 w-3 text-violet-500 dark:text-violet-400" />
+                )}
+              </span>
               <span className="flex-1 truncate text-left text-zinc-700 dark:text-zinc-300">{col.name}</span>
               {loading ? (
                 <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin text-zinc-400 shrink-0" />

@@ -369,12 +369,12 @@ function CollectionRow({
     } ${deleting ? "opacity-40 pointer-events-none" : ""}`}
       onClick={onSelect}
     >
-      {/* BrainHistory brand icon badge — colored per collection */}
+      {/* Stack icon badge — colored per collection */}
       <div className={`shrink-0 h-6 w-6 rounded-md flex items-center justify-center ${iconBg}`}>
         {col.emoji && col.emoji !== "brain" ? (
           <span className="text-sm leading-none">{col.emoji}</span>
         ) : (
-          <BrainIcon className={`h-3.5 w-3.5 ${iconColor}`} />
+          <StackIcon className={`h-3.5 w-3.5 ${iconColor}`} />
         )}
       </div>
 
@@ -448,7 +448,7 @@ function InlineCreateForm({
     <div className="px-1 pb-0.5">
       <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30">
         <div className="shrink-0 h-6 w-6 rounded-md flex items-center justify-center bg-violet-100 dark:bg-violet-500/20">
-          <BrainIcon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
+          <StackIcon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
         </div>
         <input
           ref={inputRef}
