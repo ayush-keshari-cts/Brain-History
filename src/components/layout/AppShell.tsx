@@ -12,11 +12,15 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const NAV = [
-  { href: "/dashboard", label: "Library",   icon: LibraryIcon  },
-  { href: "/search",    label: "AI Search",  icon: SparkleIcon, tag: "AI" },
-  { href: "/profile",   label: "Profile",    icon: UserIcon     },
+const NAV_PRIMARY = [
+  { href: "/dashboard", label: "Library",  icon: LibraryIcon             },
+  { href: "/search",    label: "AI Search", icon: SparkleIcon, tag: "AI" },
 ];
+const NAV_SECONDARY = [
+  { href: "/profile",   label: "Profile",  icon: UserIcon                },
+];
+// combined for mobile header
+const NAV = [...NAV_PRIMARY, ...NAV_SECONDARY];
 
 // Gradient per collection color for the sidebar dot
 const COL_GRAD: Record<string, string> = {
@@ -102,42 +106,10 @@ export default function AppShell({ user, children }: AppShellProps) {
                              text-zinc-400 dark:text-white/25">Workspace</span>
           </div>
 
-          {/* Main nav */}
-          <nav className="px-2 space-y-0.5">
-            {NAV.map(({ href, label, icon: Icon, tag }) => {
-              const active = pathname === href || (href !== "/" && pathname.startsWith(href));
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 group ${
-                    active
-                      ? "bg-violet-50 dark:bg-[var(--bh-brand-soft,rgba(124,92,255,0.12))] text-violet-700 dark:text-[#F5F5F7]"
-                      : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  {/* Left active indicator */}
-                  {active && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
-                                     bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
-                  )}
-                  <Icon className={`h-4 w-4 shrink-0 ${
-                    active
-                      ? "text-violet-600 dark:text-[#9B7BFF]"
-                      : "text-zinc-400 dark:text-white/40 group-hover:text-zinc-600 dark:group-hover:text-white/70"
-                  }`} />
-                  <span className="flex-1 truncate">{label}</span>
-                  {tag && (
-                    <span className="font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px]
-                                     bg-violet-100 dark:bg-[rgba(124,92,255,0.15)]
-                                     text-violet-700 dark:text-[#9B7BFF]
-                                     border border-violet-200 dark:border-[rgba(124,92,255,0.25)]
-                                     tracking-wide uppercase">{tag}</span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Main nav — Suspense for useSearchParams (Starred active state) */}
+          <Suspense fallback={<MainNavFallback pathname={pathname} />}>
+            <MainNav pathname={pathname} />
+          </Suspense>
 
           {/* Divider */}
           <div className="mx-4 my-2 border-t border-zinc-100 dark:border-white/[0.06]" />
@@ -293,7 +265,7 @@ function CollectionsSideSection() {
         ) : collections.length === 0 ? (
           <p className="px-3 py-2 text-xs text-zinc-400 dark:text-white/25 italic">No collections yet</p>
         ) : (
-          collections.map((col) => (
+          [...collections].sort((a, b) => (b.itemCount ?? 0) - (a.itemCount ?? 0)).map((col) => (
             <CollectionRow
               key={col._id}
               col={col}
@@ -516,6 +488,109 @@ function CollectionsSkeleton() {
   );
 }
 
+// ─── Main nav (needs useSearchParams for Starred active state) ────────────────
+
+function MainNav({ pathname }: { pathname: string }) {
+  const searchParams    = useSearchParams();
+  const isStarredActive = pathname === "/dashboard" && searchParams.get("type") === "__fav__";
+  return <NavItems pathname={pathname} isStarredActive={isStarredActive} />;
+}
+
+function MainNavFallback({ pathname }: { pathname: string }) {
+  // Renders without search-param knowledge — Library always active on /dashboard, Starred never active
+  return <NavItems pathname={pathname} isStarredActive={false} />;
+}
+
+function NavItems({ pathname, isStarredActive }: { pathname: string; isStarredActive: boolean }) {
+  return (
+    <nav className="px-2 space-y-0.5">
+      {/* Primary: Library + AI Search */}
+      {NAV_PRIMARY.map(({ href, label, icon: Icon, tag }) => {
+        const active = href === "/dashboard"
+          ? (pathname === href || pathname.startsWith(href)) && !isStarredActive
+          : pathname === href || (href !== "/" && pathname.startsWith(href));
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 group ${
+              active
+                ? "bg-violet-50 dark:bg-[var(--bh-brand-soft,rgba(124,92,255,0.12))] text-violet-700 dark:text-[#F5F5F7]"
+                : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+            }`}
+          >
+            {active && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                               bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+            )}
+            <Icon className={`h-4 w-4 shrink-0 ${
+              active
+                ? "text-violet-600 dark:text-[#9B7BFF]"
+                : "text-zinc-400 dark:text-white/40 group-hover:text-zinc-600 dark:group-hover:text-white/70"
+            }`} />
+            <span className="flex-1 truncate">{label}</span>
+            {tag && (
+              <span className="font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px]
+                               bg-violet-100 dark:bg-[rgba(124,92,255,0.15)]
+                               text-violet-700 dark:text-[#9B7BFF]
+                               border border-violet-200 dark:border-[rgba(124,92,255,0.25)]
+                               tracking-wide uppercase">{tag}</span>
+            )}
+          </Link>
+        );
+      })}
+
+      {/* Starred — below AI Search */}
+      <Link
+        href="/dashboard?type=__fav__"
+        className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 group ${
+          isStarredActive
+            ? "bg-violet-50 dark:bg-[var(--bh-brand-soft,rgba(124,92,255,0.12))] text-violet-700 dark:text-[#F5F5F7]"
+            : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+        }`}
+      >
+        {isStarredActive && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                           bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+        )}
+        <StarIcon className={`h-4 w-4 shrink-0 ${
+          isStarredActive
+            ? "text-violet-600 dark:text-[#9B7BFF]"
+            : "text-zinc-400 dark:text-white/40 group-hover:text-zinc-600 dark:group-hover:text-white/70"
+        }`} />
+        <span className="flex-1 truncate">Starred</span>
+      </Link>
+
+      {/* Secondary: Profile */}
+      {NAV_SECONDARY.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 group ${
+              active
+                ? "bg-violet-50 dark:bg-[var(--bh-brand-soft,rgba(124,92,255,0.12))] text-violet-700 dark:text-[#F5F5F7]"
+                : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+            }`}
+          >
+            {active && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                               bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+            )}
+            <Icon className={`h-4 w-4 shrink-0 ${
+              active
+                ? "text-violet-600 dark:text-[#9B7BFF]"
+                : "text-zinc-400 dark:text-white/40 group-hover:text-zinc-600 dark:group-hover:text-white/70"
+            }`} />
+            <span className="flex-1 truncate">{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 function Avatar({ name, image, initials, size }: { name: string; image?: string; initials: string; size: number }) {
@@ -599,4 +674,7 @@ function InboxIcon({ className }: { className?: string }) {
 }
 function ChevronIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9"/></svg>;
+}
+function StarIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg>;
 }

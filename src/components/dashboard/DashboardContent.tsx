@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api, type ContentItem, type CollectionItem } from "@/lib/api-client";
 import SaveUrlForm from "./SaveUrlForm";
 import TypeFilterBar, { type AvailableType } from "./TypeFilterBar";
@@ -17,18 +17,18 @@ export default function DashboardContent() {
   const [page, setPage]               = useState(1);
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [activeType, setActiveType]   = useState<string | undefined>(undefined);
   const pollRef                       = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Active collection comes from URL (?collection=xxx) — set by the sidebar
+  // Active filters come from URL params — set by sidebar (collection) or filter bar (type)
+  const router           = useRouter();
   const searchParams     = useSearchParams();
   const activeCollection = searchParams.get("collection") ?? undefined;
+  const activeType       = searchParams.get("type") ?? undefined;
 
   // Collections list — needed by ContentCard picker
-  const [collections,     setCollections]     = useState<CollectionItem[]>([]);
+  const [collections,    setCollections]    = useState<CollectionItem[]>([]);
   // Available content types for dynamic filter bar
-  const [availableTypes,  setAvailableTypes]  = useState<AvailableType[]>([]);
-  const [hasFavourites,   setHasFavourites]   = useState(false);
+  const [availableTypes, setAvailableTypes] = useState<AvailableType[]>([]);
 
   // ── Bulk selection ──────────────────────────────────────────────────────────
   const [selectMode,          setSelectMode]          = useState(false);
@@ -49,9 +49,8 @@ export default function DashboardContent() {
   const refreshTypes = useCallback(() => {
     fetch("/api/content/types")
       .then((r) => r.json())
-      .then((data: { types: AvailableType[]; hasFavourites: boolean }) => {
+      .then((data: { types: AvailableType[] }) => {
         setAvailableTypes(data.types ?? []);
-        setHasFavourites(data.hasFavourites ?? false);
       })
       .catch(() => {});
   }, []);
@@ -131,6 +130,13 @@ export default function DashboardContent() {
     )) {
       refreshCollections();
     }
+  };
+
+  const handleTypeChange = (type: string | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (type) params.set("type", type);
+    else params.delete("type");
+    router.replace(`/dashboard?${params.toString()}`);
   };
 
   const loadMore = () => {
@@ -266,9 +272,8 @@ export default function DashboardContent() {
 
       <TypeFilterBar
         active={activeType}
-        onChange={setActiveType}
+        onChange={handleTypeChange}
         availableTypes={availableTypes}
-        hasFavourites={hasFavourites}
         total={total}
       />
 

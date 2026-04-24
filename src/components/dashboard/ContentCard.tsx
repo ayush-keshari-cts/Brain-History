@@ -102,6 +102,30 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   ),
 };
 
+// ─── Type-specific gradient thumbnail backgrounds ────────────────────────────
+type OverlayKind = "icon" | "note" | "tweet" | "waveform";
+const TYPE_THUMB: Record<string, { bg: string; overlay: OverlayKind }> = {
+  youtube_video: { bg: "linear-gradient(135deg, #1a0b2e, #5b21b6 50%, #be185d)",  overlay: "icon"     },
+  youtube_music: { bg: "linear-gradient(135deg, #1a0b2e, #5b21b6 50%, #be185d)",  overlay: "waveform" },
+  pdf:           { bg: "linear-gradient(135deg, #7c2d12, #ea580c 50%, #fb923c)",   overlay: "icon"     },
+  spotify:       { bg: "linear-gradient(135deg, #064e3b, #059669 60%, #10b981)",   overlay: "waveform" },
+  audio:         { bg: "linear-gradient(135deg, #064e3b, #059669 60%, #10b981)",   overlay: "waveform" },
+  video:         { bg: "linear-gradient(135deg, #1a0b2e, #7c3aed 50%, #be185d)",   overlay: "icon"     },
+  blog:          { bg: "linear-gradient(135deg, #0c4a6e, #0284c7 50%, #38bdf8)",   overlay: "icon"     },
+  website:       { bg: "linear-gradient(135deg, #0c2a6e, #1e3a8a 50%, #3b82f6)",   overlay: "icon"     },
+  note:          { bg: "linear-gradient(135deg, #1e1b4b, #4c1d95 50%, #7c3aed)",   overlay: "note"     },
+  github:        { bg: "linear-gradient(135deg, #0a0a0a, #27272a 50%, #3f3f46)",   overlay: "icon"     },
+  tweet:         { bg: "linear-gradient(135deg, #0c4a6e, #155e75 50%, #0891b2)",   overlay: "tweet"    },
+  instagram:     { bg: "linear-gradient(135deg, #7c1d5e, #be185d 50%, #f59e0b)",   overlay: "icon"     },
+  reddit:        { bg: "linear-gradient(135deg, #7c1d12, #dc2626 50%, #f97316)",   overlay: "icon"     },
+  linkedin:      { bg: "linear-gradient(135deg, #0c3a6e, #0369a1 50%, #0891b2)",   overlay: "icon"     },
+  image:         { bg: "linear-gradient(135deg, #831843, #be185d 50%, #ec4899)",   overlay: "icon"     },
+  screenshot:    { bg: "linear-gradient(135deg, #831843, #be185d 50%, #ec4899)",   overlay: "icon"     },
+  unknown:       { bg: "linear-gradient(135deg, #0a0a0a, #27272a 50%, #3f3f46)",   overlay: "icon"     },
+};
+// Waveform bar heights (18 bars) — gives an organic audio-waveform look
+const WAVE_HEIGHTS = [30,70,50,90,60,40,85,55,75,45,65,35,80,50,70,40,60,85];
+
 // ─── Helper: resolve inline-playable info for a content item ─────────────────
 type PlayInfo = { type: "youtube" | "spotify" | "audio" | "video"; embedUrl: string };
 
@@ -163,7 +187,6 @@ export default function ContentCard({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favLoading,      setFavLoading]      = useState(false);
   const [isPlaying,       setIsPlaying]       = useState(false);
-  const [faviconFailed,   setFaviconFailed]   = useState(false);
   const [showColPicker,   setShowColPicker]   = useState(false);
   const [colLoading,      setColLoading]      = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -222,12 +245,6 @@ export default function ContentCard({
   const playInfo   = getPlayableInfo(item);
   const isUploaded = item.platform === "upload";
 
-  // Show the site's favicon as the banner for URL-based content that has no OG thumbnail.
-  // Covers: blog, website, reddit, linkedin, tweet, instagram, tiktok, unknown.
-  // Excludes: uploaded files, media types that already have branded icons (YouTube, Spotify, audio, video, pdf, image, note, github).
-  const FAVICON_TYPES = new Set(["blog", "website", "reddit", "linkedin", "tweet", "instagram", "tiktok", "unknown"]);
-  const showFaviconBanner = !item.thumbnail && !isUploaded && FAVICON_TYPES.has(item.contentType) && !faviconFailed;
-  const faviconHostname   = (() => { try { return new URL(item.url).hostname; } catch { return ""; } })();
   const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
   const canDownloadUrl = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
   const downloadHref = isUploaded && item.fileUrl
@@ -238,6 +255,7 @@ export default function ContentCard({
 
   const tc = TYPE_CONFIG[item.contentType] ?? TYPE_CONFIG.unknown;
   const sc = STATUS_CONFIG[item.processingStatus] ?? STATUS_CONFIG.completed;
+  const tt = TYPE_THUMB[item.contentType] ?? TYPE_THUMB.unknown;
 
   const domain = isUploaded
     ? "Uploaded file"
@@ -348,40 +366,65 @@ export default function ContentCard({
           </div>
         ) : (
           <>
-            {/* Thumbnail or placeholder */}
+            {/* Thumbnail or type-specific gradient banner */}
             {item.thumbnail ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.thumbnail} alt="" className="w-full h-36 object-cover" />
-            ) : showFaviconBanner ? (
-              /* Favicon banner — shows the real site logo for blogs / generic websites */
-              <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
-                <div className="absolute inset-0 dot-bg opacity-20" />
-                {/* Site logo box */}
-                <div className="relative z-10 h-14 w-14 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 shadow-md flex items-center justify-center overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://www.google.com/s2/favicons?domain=${faviconHostname}&sz=128`}
-                    alt=""
-                    className="h-10 w-10 object-contain"
-                    onError={() => setFaviconFailed(true)}
-                  />
-                </div>
-                <span className="relative z-10 text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
-                  {domain}
-                </span>
-              </div>
             ) : (
-              <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
-                {/* Subtle dot pattern */}
-                <div className="absolute inset-0 dot-bg opacity-20" />
-                {/* Icon */}
-                <div className={`relative z-10 ${tc.light} ${tc.dark} border rounded-2xl p-2.5`}>
-                  {placeholderIcon}
-                </div>
-                {/* Content type label */}
-                <span className={`relative z-10 text-xs font-semibold tracking-wide uppercase opacity-60 ${tc.light.split(" ")[1]} ${tc.dark.split(" ")[1]}`}>
-                  {item.contentType.replace(/_/g, " ")}
-                </span>
+              <div className="w-full h-36 relative overflow-hidden" style={{ background: tt.bg }}>
+                {/* Bottom scrim */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none" />
+
+                {/* Overlay: centered type icon */}
+                {tt.overlay === "icon" && (
+                  <div className="absolute inset-0 flex items-center justify-center text-white/90">
+                    {placeholderIcon}
+                  </div>
+                )}
+
+                {/* Overlay: note lines preview */}
+                {tt.overlay === "note" && (
+                  <div className="absolute inset-4 flex flex-col gap-1.5 justify-center">
+                    <div className="h-[6px] w-3/5 rounded-sm bg-white/50" />
+                    <div className="mt-1 h-[3px] w-full rounded-sm bg-white/25" />
+                    <div className="h-[3px] w-[90%] rounded-sm bg-white/25" />
+                    <div className="h-[3px] w-4/5 rounded-sm bg-white/25" />
+                    <div className="h-[3px] w-[88%] rounded-sm bg-white/25" />
+                    <div className="h-[3px] w-1/2 rounded-sm bg-white/25" />
+                  </div>
+                )}
+
+                {/* Overlay: tweet text preview */}
+                {tt.overlay === "tweet" && (
+                  <div className="absolute inset-0 flex flex-col justify-between p-3.5 text-white">
+                    <span className="text-[11px] font-mono font-medium text-white/60">@{domain}</span>
+                    <p className="font-display italic text-[13px] leading-snug text-white/90 line-clamp-3">
+                      {item.title}
+                    </p>
+                  </div>
+                )}
+
+                {/* Overlay: animated waveform + faded icon */}
+                {tt.overlay === "waveform" && (
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                      {placeholderIcon}
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 flex items-end gap-[2px] h-7 z-10">
+                      {WAVE_HEIGHTS.map((h, i) => (
+                        <span
+                          key={i}
+                          className="flex-1 rounded-[2px] bg-white/70"
+                          style={{
+                            height: `${h}%`,
+                            animation: "wave 1.8s ease-in-out infinite",
+                            animationDelay: `${i * 0.1}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

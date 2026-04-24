@@ -44,6 +44,11 @@ html.dark {
   --bh-brand-line: rgba(124,92,255,0.25);
 }
 
+/* ── Hide scrollbar (preserve scroll) ────────────────────────────────────── */
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ── Custom scrollbar ─────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -124,6 +129,11 @@ html.dark .skeleton {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1);   }
 }
 
 @keyframes fabIn {

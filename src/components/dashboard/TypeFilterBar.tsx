@@ -32,52 +32,49 @@ interface TypeFilterBarProps {
   active:         string | undefined;
   onChange:       (type: string | undefined) => void;
   availableTypes: AvailableType[];
-  hasFavourites:  boolean;
   total?:         number;
 }
 
 export default function TypeFilterBar({
-  active, onChange, availableTypes, hasFavourites, total,
+  active, onChange, availableTypes, total,
 }: TypeFilterBarProps) {
-  // Don't render the bar at all when there's nothing to filter
-  if (availableTypes.length === 0 && !hasFavourites) return null;
+  if (availableTypes.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {/* All — always present */}
-      <Chip
-        label="All saved"
-        emoji="◈"
-        active={active === undefined}
-        onClick={() => onChange(undefined)}
-        count={total}
-      />
-
-      {/* Favourites — only if user has some */}
-      {hasFavourites && (
+    <div className="flex items-center min-w-0">
+      {/* "All saved" — always visible, never scrolls */}
+      <div className="shrink-0 pr-2">
         <Chip
-          label="Favourites"
-          emoji="★"
-          active={active === "__fav__"}
-          onClick={() => onChange("__fav__")}
+          label="All saved"
+          emoji="◈"
+          active={active === undefined}
+          onClick={() => onChange(undefined)}
+          count={total}
         />
-      )}
+      </div>
 
-      {/* One chip per content type the user actually has */}
-      {availableTypes.map(({ value, count }) => {
-        const meta = TYPE_META[value];
-        if (!meta) return null; // unknown / future type
-        return (
-          <Chip
-            key={value}
-            label={meta.label}
-            emoji={meta.emoji}
-            active={active === value}
-            onClick={() => onChange(value)}
-            count={count}
-          />
-        );
-      })}
+      {/* Separator */}
+      <div className="shrink-0 h-4 w-px bg-zinc-200 dark:bg-white/[0.08] mr-2" />
+
+      {/* Scrollable type chips */}
+      <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 w-max pr-1">
+          {availableTypes.map(({ value, count }) => {
+            const meta = TYPE_META[value];
+            if (!meta) return null;
+            return (
+              <Chip
+                key={value}
+                label={meta.label}
+                emoji={meta.emoji}
+                active={active === value}
+                onClick={() => onChange(value)}
+                count={count}
+              />
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
