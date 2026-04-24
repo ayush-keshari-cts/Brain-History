@@ -1,43 +1,103 @@
 "use client";
 
-const TYPES = [
-  { value: undefined,       label: "All",        emoji: "◈" },
-  { value: "__fav__",       label: "Favourites",  emoji: "★" },
-  { value: "blog",          label: "Blog",        emoji: "✦" },
-  { value: "youtube_video", label: "YouTube",     emoji: "▶" },
-  { value: "tweet",         label: "Tweet",       emoji: "𝕏" },
-  { value: "pdf",           label: "PDF",         emoji: "⬛" },
-  { value: "github",        label: "GitHub",      emoji: "⊛" },
-  { value: "reddit",        label: "Reddit",      emoji: "◎" },
-  { value: "website",       label: "Website",     emoji: "◉" },
-  { value: "image",         label: "Image",       emoji: "⬡" },
-] as const;
+// Full label + emoji map for every content type the app can produce.
+// Only types that exist in the user's library will be rendered.
+const TYPE_META: Record<string, { label: string; emoji: string }> = {
+  blog:          { label: "Blog",          emoji: "✦"  },
+  website:       { label: "Website",       emoji: "◉"  },
+  youtube_video: { label: "YouTube",       emoji: "▶"  },
+  youtube_music: { label: "YT Music",      emoji: "♪"  },
+  tweet:         { label: "Tweet",         emoji: "𝕏"  },
+  reddit:        { label: "Reddit",        emoji: "◎"  },
+  linkedin:      { label: "LinkedIn",      emoji: "in" },
+  instagram:     { label: "Instagram",     emoji: "◈"  },
+  tiktok:        { label: "TikTok",        emoji: "♬"  },
+  spotify:       { label: "Spotify",       emoji: "♫"  },
+  audio:         { label: "Audio",         emoji: "♫"  },
+  video:         { label: "Video",         emoji: "▶"  },
+  pdf:           { label: "PDF",           emoji: "⬛" },
+  image:         { label: "Image",         emoji: "⬡"  },
+  screenshot:    { label: "Screenshot",    emoji: "⬡"  },
+  github:        { label: "GitHub",        emoji: "⊛"  },
+  note:          { label: "Note",          emoji: "✎"  },
+  unknown:       { label: "Other",         emoji: "◇"  },
+};
 
-interface TypeFilterBarProps {
-  active:   string | undefined;
-  onChange: (type: string | undefined) => void;
+export interface AvailableType {
+  value: string;
+  count: number;
 }
 
-export default function TypeFilterBar({ active, onChange }: TypeFilterBarProps) {
+interface TypeFilterBarProps {
+  active:         string | undefined;
+  onChange:       (type: string | undefined) => void;
+  availableTypes: AvailableType[];
+  hasFavourites:  boolean;
+}
+
+export default function TypeFilterBar({
+  active, onChange, availableTypes, hasFavourites,
+}: TypeFilterBarProps) {
+  // Don't render the bar at all when there's nothing to filter
+  if (availableTypes.length === 0 && !hasFavourites) return null;
+
   return (
     <div className="flex flex-wrap gap-1.5">
-      {TYPES.map(({ value, label, emoji }) => {
-        const isActive = active === value;
+      {/* All — always present */}
+      <Chip
+        label="All saved"
+        emoji="◈"
+        active={active === undefined}
+        onClick={() => onChange(undefined)}
+      />
+
+      {/* Favourites — only if user has some */}
+      {hasFavourites && (
+        <Chip
+          label="Favourites"
+          emoji="★"
+          active={active === "__fav__"}
+          onClick={() => onChange("__fav__")}
+        />
+      )}
+
+      {/* One chip per content type the user actually has */}
+      {availableTypes.map(({ value }) => {
+        const meta = TYPE_META[value];
+        if (!meta) return null; // unknown / future type
         return (
-          <button
-            key={label}
+          <Chip
+            key={value}
+            label={meta.label}
+            emoji={meta.emoji}
+            active={active === value}
             onClick={() => onChange(value)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              isActive
-                ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20 border border-transparent"
-                : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
-            }`}
-          >
-            <span className="text-xs">{emoji}</span>
-            {label}
-          </button>
+          />
         );
       })}
     </div>
+  );
+}
+
+function Chip({
+  label, emoji, active, onClick,
+}: {
+  label: string;
+  emoji: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+        active
+          ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20 border border-transparent"
+          : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
+      }`}
+    >
+      <span className="text-xs">{emoji}</span>
+      {label}
+    </button>
   );
 }
