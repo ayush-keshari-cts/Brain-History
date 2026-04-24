@@ -16,5 +16,18 @@
 export async function register() {
   if (process.env.NODE_ENV !== "production") {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+    // Replace the default warning listener with one that silently swallows
+    // the TLS verification warning — it's expected noise in this dev setup.
+    process.removeAllListeners("warning");
+    process.on("warning", (warning) => {
+      if (
+        warning.name === "Warning" &&
+        warning.message.includes("NODE_TLS_REJECT_UNAUTHORIZED")
+      ) {
+        return;
+      }
+      process.stderr.write(`${warning.stack ?? warning.message}\n`);
+    });
   }
 }

@@ -58,6 +58,13 @@ export default function DashboardContent() {
     refreshTypes();
   }, [refreshCollections, refreshTypes]);
 
+  // Re-fetch collections whenever the sidebar creates / renames / deletes one
+  useEffect(() => {
+    const handler = () => refreshCollections();
+    window.addEventListener("collections-changed", handler);
+    return () => window.removeEventListener("collections-changed", handler);
+  }, [refreshCollections]);
+
   // ── Fetch content pages ─────────────────────────────────────────────────────
   const fetchPage = useCallback(
     async (pg: number, type?: string, collectionId?: string, append = false) => {

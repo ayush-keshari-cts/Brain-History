@@ -18,29 +18,6 @@ const NAV = [
   { href: "/profile",   label: "Profile",    icon: UserIcon },
 ];
 
-// Optional custom emoji icons for collections (shown in popup picker only)
-const COLLECTION_ICONS = [
-  "⭐", "💡", "🎯", "🚀", "📝", "🎨", "🎵",
-  "🎬", "🔖", "💼", "🌟", "🔬", "🏆", "🌱", "⚡",
-  "🔥", "💎", "🎓", "🎁", "📊", "🧠", "🌍", "🎮",
-];
-
-// Color map for collection dots
-const COLOR_DOT: Record<string, string> = {
-  violet:  "bg-violet-500",
-  blue:    "bg-blue-500",
-  green:   "bg-green-500",
-  emerald: "bg-emerald-500",
-  red:     "bg-red-500",
-  orange:  "bg-orange-500",
-  amber:   "bg-amber-500",
-  pink:    "bg-pink-500",
-  sky:     "bg-sky-500",
-  teal:    "bg-teal-500",
-};
-
-const COLORS = Object.keys(COLOR_DOT);
-
 // Icon text-color classes per collection color (for the brain SVG icon)
 const COLOR_ICON: Record<string, string> = {
   violet:  "text-violet-500  dark:text-violet-400",
@@ -234,6 +211,7 @@ function CollectionsSideSection() {
   const handleDeleted = (id: string) => {
     setCollections((prev) => prev.filter((c) => c._id !== id));
     if (activeId === id) router.push("/dashboard");
+    window.dispatchEvent(new CustomEvent("collections-changed"));
   };
 
   return (
@@ -255,18 +233,21 @@ function CollectionsSideSection() {
         </button>
       </div>
 
-      {/* Inline create form */}
-      {showCreate && (
-        <div className="px-2.5 mb-1">
-          <CollectionCreateForm
-            onCreated={(col) => { setCollections((prev) => [...prev, col]); setShowCreate(false); navigate(col._id); }}
-            onCancel={() => setShowCreate(false)}
-          />
-        </div>
-      )}
-
       {/* List */}
       <div className="flex-1 overflow-y-auto px-2.5 space-y-0.5 min-h-0">
+
+        {/* Inline create form — appears at top of list when + is clicked */}
+        {showCreate && (
+          <InlineCreateForm
+            onCreated={(col) => {
+              setCollections((prev) => [...prev, col]);
+              setShowCreate(false);
+              navigate(col._id);
+              window.dispatchEvent(new CustomEvent("collections-changed"));
+            }}
+            onCancel={() => setShowCreate(false)}
+          />
+        )}
         {/* All library */}
         <button
           onClick={() => navigate(undefined)}
@@ -298,7 +279,10 @@ function CollectionsSideSection() {
               active={activeId === col._id}
               onSelect={() => navigate(col._id)}
               onDeleted={handleDeleted}
-              onRenamed={(updated) => setCollections((prev) => prev.map((c) => c._id === updated._id ? updated : c))}
+              onRenamed={(updated) => {
+                setCollections((prev) => prev.map((c) => c._id === updated._id ? updated : c));
+                window.dispatchEvent(new CustomEvent("collections-changed"));
+              }}
             />
           ))
         )}
@@ -438,136 +422,51 @@ function CollectionRow({
 
 // ─── Inline create form ───────────────────────────────────────────────────────
 
-function CollectionCreateForm({
+function InlineCreateForm({
   onCreated, onCancel,
 }: {
   onCreated: (col: CollectionItem) => void;
   onCancel: () => void;
 }) {
-  const [name,           setName]           = useState("");
-  const [icon,           setIcon]           = useState("brain"); // "brain" = use SVG logo
-  const [color,          setColor]          = useState("violet");
-  const [saving,         setSaving]         = useState(false);
-  const [error,          setError]          = useState("");
-  const [showIconPicker, setShowIconPicker] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const [name,   setName]   = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close icon popup on outside click
-  useEffect(() => {
-    if (!showIconPicker) return;
-    const h = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setShowIconPicker(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [showIconPicker]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const submit = async () => {
+    if (!name.trim()) { onCancel(); return; }
+    if (saving) return;
     setSaving(true);
-    setError("");
     try {
-      // Store "brain" sentinel or the chosen emoji
-      const res = await api.createCollection(name.trim(), icon === "brain" ? "brain" : icon, color);
+      const res = await api.createCollection(name.trim(), "brain", "violet");
       onCreated(res.collection);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
-      setSaving(false);
-    }
+    } catch { setSaving(false); }
   };
 
-  const previewBg    = COLOR_BG[color]   ?? COLOR_BG.violet;
-  const previewColor = COLOR_ICON[color] ?? COLOR_ICON.violet;
-
   return (
-    <form onSubmit={submit} className="space-y-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
-
-      {/* Icon button + name in one row */}
-      <div className="flex items-center gap-2">
-
-        {/* Icon preview — click to open popup */}
-        <div className="relative shrink-0" ref={pickerRef}>
-          <button
-            type="button"
-            title="Choose icon (optional)"
-            onClick={() => setShowIconPicker((v) => !v)}
-            className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all hover:scale-105 ${previewBg} border-zinc-200 dark:border-zinc-700`}
-          >
-            {icon === "brain" ? (
-              <BrainIcon className={`h-4 w-4 ${previewColor}`} />
-            ) : (
-              <span className="text-base leading-none">{icon}</span>
-            )}
-          </button>
-
-          {/* Icon popup */}
-          {showIconPicker && (
-            <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl p-2 w-52">
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 px-1 pb-1.5">Choose an icon</p>
-              <div className="grid grid-cols-6 gap-1">
-                {/* Brain logo option (first) */}
-                <button
-                  type="button"
-                  onClick={() => { setIcon("brain"); setShowIconPicker(false); }}
-                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${icon === "brain" ? "bg-violet-100 dark:bg-violet-500/20 ring-2 ring-violet-400" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"}`}
-                  title="BrainHistory logo"
-                >
-                  <BrainIcon className={`h-4 w-4 ${previewColor}`} />
-                </button>
-                {/* Emoji options */}
-                {COLLECTION_ICONS.map((ic) => (
-                  <button
-                    key={ic}
-                    type="button"
-                    onClick={() => { setIcon(ic); setShowIconPicker(false); }}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center text-base transition-all ${icon === ic ? "bg-violet-100 dark:bg-violet-500/20 ring-2 ring-violet-400" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"}`}
-                  >
-                    {ic}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+    <div className="px-1 pb-0.5">
+      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30">
+        <div className="shrink-0 h-6 w-6 rounded-md flex items-center justify-center bg-violet-100 dark:bg-violet-500/20">
+          <BrainIcon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
         </div>
-
-        {/* Name */}
         <input
-          autoFocus
+          ref={inputRef}
           type="text"
           placeholder="Collection name…"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") onCancel();
+          }}
+          onBlur={() => { if (!saving) submit(); }}
+          disabled={saving}
           maxLength={50}
-          className="flex-1 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 outline-none focus:border-violet-400 dark:focus:border-violet-500 text-zinc-800 dark:text-zinc-200"
+          className="flex-1 min-w-0 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 outline-none disabled:opacity-50"
         />
       </div>
-
-      {/* Color swatches */}
-      <div className="flex items-center gap-1.5 px-0.5">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setColor(c)}
-            className={`h-3.5 w-3.5 rounded-full ${COLOR_DOT[c]} transition-transform ${color === c ? "scale-125 ring-2 ring-offset-1 ring-white dark:ring-zinc-800" : "opacity-50 hover:opacity-80"}`}
-          />
-        ))}
-      </div>
-
-      {error && <p className="text-xs text-red-500">{error}</p>}
-
-      <div className="flex gap-1.5">
-        <button type="button" onClick={onCancel}
-          className="flex-1 py-1.5 text-xs font-medium rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
-          Cancel
-        </button>
-        <button type="submit" disabled={saving || !name.trim()}
-          className="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50 transition-colors">
-          {saving ? "…" : "Create"}
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }
 
