@@ -43,8 +43,8 @@ function mimeToContentType(mime: string, filename: string): ContentType {
     mime === "application/msword" || ext === "docx" || ext === "doc"
   )                                                                                       return ContentType.PDF;
   if (mime.startsWith("image/"))                                                          return ContentType.IMAGE;
-  if (mime.startsWith("audio/"))                                                          return ContentType.SPOTIFY;
-  if (mime.startsWith("video/"))                                                          return ContentType.YOUTUBE_VIDEO;
+  if (mime.startsWith("audio/"))                                                          return ContentType.AUDIO;
+  if (mime.startsWith("video/"))                                                          return ContentType.VIDEO;
   return ContentType.UNKNOWN;
 }
 
@@ -128,6 +128,8 @@ async function extractText(
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
+
+export const maxDuration = 60; // seconds — large file parsing + Cloudinary upload can take a while
 
 export async function POST(req: NextRequest) {
   try {

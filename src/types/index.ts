@@ -19,6 +19,8 @@ export enum ContentType {
   LINKEDIN      = "linkedin",
   TIKTOK        = "tiktok",
   SPOTIFY       = "spotify",
+  AUDIO         = "audio",
+  VIDEO         = "video",
   UNKNOWN       = "unknown",
 }
 

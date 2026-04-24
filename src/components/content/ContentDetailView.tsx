@@ -53,12 +53,15 @@ export default function ContentDetailView({ content }: { content: Record<string,
   const hasFile    = Boolean(content.fileUrl);
 
   // Detect content kind — also covers uploaded audio/video via mimeType
+  const mime     = (content.mimeType as string | undefined) ?? "";
   const isImage  = content.contentType === "image" || content.contentType === "screenshot";
   const isPdf    = content.contentType === "pdf";
+  // Word docs are saved as contentType "pdf" but served with Word MIME → can't be shown in iframe
+  const isWordDoc = isPdf && isUploaded && (mime.includes("wordprocessingml") || mime.includes("msword") || mime.endsWith(".doc") || mime.endsWith(".docx"));
   const isAudio  = content.contentType === "spotify" || content.contentType === "audio"
-    || Boolean(isUploaded && (content.mimeType as string | undefined)?.startsWith("audio/"));
+    || Boolean(isUploaded && mime.startsWith("audio/"));
   const isVideo  = ["video", "youtube_video", "youtube_music"].includes(content.contentType)
-    || Boolean(isUploaded && (content.mimeType as string | undefined)?.startsWith("video/"));
+    || Boolean(isUploaded && mime.startsWith("video/"));
 
   // YouTube embed ID (only for URL-based YouTube content)
   const youtubeId = !isUploaded && ["youtube_video", "youtube_music"].includes(content.contentType)
@@ -66,8 +69,10 @@ export default function ContentDetailView({ content }: { content: Record<string,
     : null;
 
   // File URL for native player / iframe
-  const viewerFileUrl: string | null = isUploaded && hasFile
-    ? `/api/files/${content._id}`
+  // Uploaded files: only use the proxy URL if Cloudinary actually stored the file.
+  // Never fall through to content.url for uploads — it's a fake brainhistory:// URI.
+  const viewerFileUrl: string | null = isUploaded
+    ? (hasFile ? `/api/files/${content._id}` : null)
     : (isPdf || isImage) && content.url
       ? (content.url as string)
       : null;
@@ -133,7 +138,8 @@ export default function ContentDetailView({ content }: { content: Record<string,
         <MediaViewer
           fileUrl={viewerFileUrl}
           downloadUrl={downloadUrl ?? "#"}
-          isImage={isImage} isPdf={isPdf} isAudio={isAudio} isVideo={isVideo}
+          isImage={isImage} isPdf={isPdf && !isWordDoc} isAudio={isAudio} isVideo={isVideo}
+          isWordDoc={isWordDoc}
           filename={content.title as string}
         />
       ) : (
@@ -345,8 +351,8 @@ function YouTubeViewer({ videoId, title }: { videoId: string; title: string }) {
 
 // ─── Native Media Viewer (uploaded files) ─────────────────────────────────────
 
-function MediaViewer({ fileUrl, downloadUrl, isImage, isPdf, isAudio, isVideo, filename }: {
-  fileUrl: string; downloadUrl: string; isImage: boolean; isPdf: boolean; isAudio: boolean; isVideo: boolean; filename: string;
+function MediaViewer({ fileUrl, downloadUrl, isImage, isPdf, isAudio, isVideo, isWordDoc, filename }: {
+  fileUrl: string; downloadUrl: string; isImage: boolean; isPdf: boolean; isAudio: boolean; isVideo: boolean; isWordDoc: boolean; filename: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -505,6 +511,30 @@ function MediaViewer({ fileUrl, downloadUrl, isImage, isPdf, isAudio, isVideo, f
       >
         Your browser does not support the video element.
       </video>
+    </div>
+  );
+
+  // Word document — browsers can't render .docx/.doc inline; offer download
+  if (isWordDoc) return (
+    <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+      <div className="px-5 pt-5 pb-4 flex items-center gap-4">
+        <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center shrink-0">
+          <svg className="h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6M9 17h4M13 3v5a1 1 0 001 1h5"/>
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{filename}</p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">Word document · preview not supported in browser</p>
+        </div>
+      </div>
+      <div className="px-5 pb-5">
+        <a href={downloadUrl}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-500/20">
+          <DownloadIcon className="h-4 w-4" /> Download to open
+        </a>
+      </div>
     </div>
   );
 
