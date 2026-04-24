@@ -153,14 +153,55 @@ const EXAMPLE_QUERIES = [
 ];
 
 const TYPE_EMOJI: Record<string, string> = {
-  tweet: "𝕏", youtube_video: "▶", blog: "✦", pdf: "⬛",
-  github: "⊛", reddit: "◎", website: "◉", image: "⬡", unknown: "◇",
+  tweet: "𝕏", youtube_video: "▶", youtube_music: "♪", blog: "✦", pdf: "⬛",
+  github: "⊛", reddit: "◎", website: "◉", image: "⬡", spotify: "♫",
+  audio: "♫", video: "▶", note: "✎", unknown: "◇",
 };
 
+// ─── Helper: resolve inline-playable info for a search result (URL-only) ─────
+type PlayInfo = { type: "youtube" | "spotify"; embedUrl: string };
+
+function getSearchPlayableInfo(item: SearchResultItem): PlayInfo | null {
+  const ct = item.contentType;
+
+  if (ct === "youtube_video" || ct === "youtube_music") {
+    try {
+      const u = new URL(item.url);
+      let videoId: string | null = null;
+      if (u.hostname.includes("youtube.com")) videoId = u.searchParams.get("v");
+      else if (u.hostname === "youtu.be")     videoId = u.pathname.slice(1).split("?")[0];
+      if (videoId) return { type: "youtube", embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+    } catch { /* ignore */ }
+  }
+
+  if (ct === "spotify") {
+    try {
+      const u = new URL(item.url);
+      if (u.hostname === "open.spotify.com") {
+        const parts = u.pathname.split("/").filter(Boolean);
+        if (
+          parts.length >= 2 &&
+          ["track", "album", "playlist", "episode", "show"].includes(parts[0])
+        ) {
+          return {
+            type: "spotify",
+            embedUrl: `https://open.spotify.com/embed/${parts[0]}/${parts[1]}?utm_source=generator&theme=0`,
+          };
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  return null;
+}
+
 function SearchResultCard({ item }: { item: SearchResultItem }) {
-  const emoji  = TYPE_EMOJI[item.contentType] ?? "◇";
-  const domain = (() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.url; } })();
-  const pct    = Math.round(item.similarityScore * 100);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const emoji    = TYPE_EMOJI[item.contentType] ?? "◇";
+  const domain   = (() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.url; } })();
+  const pct      = Math.round(item.similarityScore * 100);
+  const playInfo = getSearchPlayableInfo(item);
 
   return (
     <div className="card-accent group rounded-2xl p-4 space-y-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-px transition-all duration-150">
@@ -176,6 +217,20 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
           <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20 font-medium">
             {pct}%
           </span>
+          {/* Inline play button */}
+          {playInfo && (
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isPlaying
+                  ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10"
+                  : "text-zinc-400 dark:text-zinc-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10"
+              }`}
+              title={isPlaying ? "Close player" : "Play inline"}
+            >
+              {isPlaying ? <StopIcon className="h-3.5 w-3.5" /> : <PlayIcon className="h-3.5 w-3.5" />}
+            </button>
+          )}
           <a href={item.url} target="_blank" rel="noopener noreferrer"
             className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             title="Open original">
@@ -188,10 +243,36 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
           </Link>
         </div>
       </div>
+
       {item.snippet && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-2 pl-11">
           {item.snippet}
         </p>
+      )}
+
+      {/* Inline player — expands below the card content */}
+      {isPlaying && playInfo && (
+        <div className="mt-1 rounded-xl overflow-hidden">
+          {playInfo.type === "youtube" && (
+            <div className="aspect-video w-full">
+              <iframe
+                src={playInfo.embedUrl}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+          {playInfo.type === "spotify" && (
+            <iframe
+              src={playInfo.embedUrl}
+              height="152"
+              className="w-full block rounded-xl"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              style={{ background: "#000" }}
+            />
+          )}
+        </div>
       )}
     </div>
   );
@@ -202,6 +283,12 @@ function SearchIcon({ className }: { className?: string }) {
 }
 function SparkleIcon({ className }: { className?: string }) {
   return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L13.4 8.4L19 9L13.4 9.6L12 15L10.6 9.6L5 9L10.6 8.4L12 3Z" /></svg>;
+}
+function PlayIcon({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>;
+}
+function StopIcon({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>;
 }
 function ExternalLinkIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>;

@@ -102,6 +102,46 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   ),
 };
 
+// ─── Helper: resolve inline-playable info for a content item ─────────────────
+type PlayInfo = { type: "youtube" | "spotify" | "audio" | "video"; embedUrl: string };
+
+function getPlayableInfo(item: ContentItem): PlayInfo | null {
+  const ct = item.contentType;
+
+  if (ct === "youtube_video" || ct === "youtube_music") {
+    try {
+      const u = new URL(item.url);
+      let videoId: string | null = null;
+      if (u.hostname.includes("youtube.com")) videoId = u.searchParams.get("v");
+      else if (u.hostname === "youtu.be")     videoId = u.pathname.slice(1).split("?")[0];
+      if (videoId) return { type: "youtube", embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1` };
+    } catch { /* ignore */ }
+  }
+
+  if (ct === "spotify") {
+    try {
+      const u = new URL(item.url);
+      if (u.hostname === "open.spotify.com") {
+        const parts = u.pathname.split("/").filter(Boolean);
+        if (
+          parts.length >= 2 &&
+          ["track", "album", "playlist", "episode", "show"].includes(parts[0])
+        ) {
+          return {
+            type: "spotify",
+            embedUrl: `https://open.spotify.com/embed/${parts[0]}/${parts[1]}?utm_source=generator&theme=0`,
+          };
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  if (ct === "audio" && item.fileUrl) return { type: "audio",   embedUrl: item.fileUrl };
+  if (ct === "video" && item.fileUrl) return { type: "video",   embedUrl: item.fileUrl };
+
+  return null;
+}
+
 interface Props {
   item:      ContentItem;
   onDeleted: (id: string) => void;
@@ -112,6 +152,7 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
   const [deleting,        setDeleting]        = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favLoading,      setFavLoading]      = useState(false);
+  const [isPlaying,       setIsPlaying]       = useState(false);
 
   const handleDeleteConfirm = async () => {
     setDeleting(true);
@@ -139,6 +180,7 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
     }
   };
 
+  const playInfo   = getPlayableInfo(item);
   const isUploaded = item.platform === "upload";
   const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
   const canDownloadUrl = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
@@ -172,34 +214,104 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
 
     <div className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-md dark:hover:shadow-zinc-900/50 transition-all duration-200 hover:-translate-y-0.5 ${deleting ? "opacity-40 pointer-events-none" : ""}`}>
 
-      {/* Favourite button */}
+      {/* Favourite button — z-20 so it sits above the play overlay */}
       <button
         onClick={handleFavourite}
         disabled={favLoading}
         title={item.isFavourite ? "Remove from favourites" : "Add to favourites"}
-        className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-100 dark:border-zinc-700 shadow-sm hover:scale-110 transition-transform disabled:opacity-50"
+        className="absolute top-2.5 right-2.5 z-20 p-1.5 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-100 dark:border-zinc-700 shadow-sm hover:scale-110 transition-transform disabled:opacity-50"
       >
         <StarIcon filled={item.isFavourite} className={`h-3.5 w-3.5 ${item.isFavourite ? "text-amber-400" : "text-zinc-300 dark:text-zinc-600"}`} />
       </button>
 
-      {/* Thumbnail / Placeholder */}
-      {item.thumbnail ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.thumbnail} alt="" className="w-full h-36 object-cover" />
-      ) : (
-        <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
-          {/* Subtle dot pattern */}
-          <div className="absolute inset-0 dot-bg opacity-20" />
-          {/* Icon */}
-          <div className={`relative z-10 ${tc.light} ${tc.dark} border rounded-2xl p-2.5`}>
-            {placeholderIcon}
+      {/* ── Banner area: inline player OR thumbnail/placeholder with play overlay ── */}
+      <div className="relative">
+        {isPlaying && playInfo ? (
+          /* ── Inline player ── */
+          <div className="relative w-full bg-black">
+            {/* Close button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
+              className="absolute top-1.5 right-1.5 z-10 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+              title="Close player"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </button>
+
+            {playInfo.type === "youtube" && (
+              <div className="aspect-video w-full">
+                <iframe
+                  src={playInfo.embedUrl}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+
+            {playInfo.type === "spotify" && (
+              <iframe
+                src={playInfo.embedUrl}
+                height="152"
+                className="w-full block"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                style={{ background: "#000" }}
+              />
+            )}
+
+            {playInfo.type === "audio" && (
+              <div className="flex items-center justify-center px-4 h-20 bg-zinc-900">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <audio controls autoPlay className="w-full" src={playInfo.embedUrl} />
+              </div>
+            )}
+
+            {playInfo.type === "video" && (
+              <div className="aspect-video w-full">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <video controls autoPlay className="w-full h-full bg-black" src={playInfo.embedUrl} />
+              </div>
+            )}
           </div>
-          {/* Content type label */}
-          <span className={`relative z-10 text-xs font-semibold tracking-wide uppercase opacity-60 ${tc.light.split(" ")[1]} ${tc.dark.split(" ")[1]}`}>
-            {item.contentType.replace(/_/g, " ")}
-          </span>
-        </div>
-      )}
+        ) : (
+          <>
+            {/* Thumbnail or placeholder */}
+            {item.thumbnail ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.thumbnail} alt="" className="w-full h-36 object-cover" />
+            ) : (
+              <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
+                {/* Subtle dot pattern */}
+                <div className="absolute inset-0 dot-bg opacity-20" />
+                {/* Icon */}
+                <div className={`relative z-10 ${tc.light} ${tc.dark} border rounded-2xl p-2.5`}>
+                  {placeholderIcon}
+                </div>
+                {/* Content type label */}
+                <span className={`relative z-10 text-xs font-semibold tracking-wide uppercase opacity-60 ${tc.light.split(" ")[1]} ${tc.dark.split(" ")[1]}`}>
+                  {item.contentType.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
+
+            {/* Play overlay — hidden at rest, revealed on card hover */}
+            {playInfo && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsPlaying(true); }}
+                className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                title="Play"
+                aria-label="Play inline"
+              >
+                {/* Dark scrim so the circle pops against any banner colour */}
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="relative h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:scale-110 transition-transform duration-150 shadow-lg">
+                  <PlayIcon className="h-5 w-5 text-white ml-0.5" />
+                </div>
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="flex flex-col flex-1 p-4 gap-3">
         {/* Title */}
@@ -276,6 +388,12 @@ function StarIcon({ filled, className }: { filled: boolean; className?: string }
   ) : (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
   );
+}
+function PlayIcon({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>;
+}
+function XIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>;
 }
 function ExternalLinkIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>;

@@ -60,6 +60,8 @@ export default function ContentDetailView({ content }: { content: Record<string,
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favourite,       setFavourite]       = useState<boolean>(Boolean(content.isFavourite));
   const [favLoading,      setFavLoading]      = useState(false);
+  // For notes: keep card title in local state so it updates instantly on save
+  const [noteTitleOverride, setNoteTitleOverride] = useState<string | null>(null);
 
   const isUploaded = content.platform === "upload";
   const hasFile    = Boolean(content.fileUrl);
@@ -154,6 +156,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
           contentId={content._id as string}
           text={(content.rawText ?? content.description ?? "") as string}
           title={content.title as string}
+          onTitleSaved={(t) => setNoteTitleOverride(t)}
         />
       ) : youtubeId ? (
         <YouTubeViewer videoId={youtubeId} title={content.title as string} />
@@ -193,7 +196,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
-              <h1 className="flex-1 text-xl font-bold text-zinc-900 dark:text-zinc-100 leading-snug">{content.title}</h1>
+              <h1 className="flex-1 text-xl font-bold text-zinc-900 dark:text-zinc-100 leading-snug">{noteTitleOverride ?? content.title}</h1>
               <button onClick={handleFavourite} disabled={favLoading}
                 title={favourite ? "Remove from favourites" : "Add to favourites"}
                 className="shrink-0 p-1.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors disabled:opacity-50">
@@ -382,8 +385,8 @@ function YouTubeViewer({ videoId, title }: { videoId: string; title: string }) {
 
 // ─── Note Viewer ─────────────────────────────────────────────────────────────
 
-function NoteViewer({ contentId, text: initialText, title: initialTitle }: {
-  contentId: string; text: string; title: string;
+function NoteViewer({ contentId, text: initialText, title: initialTitle, onTitleSaved }: {
+  contentId: string; text: string; title: string; onTitleSaved: (title: string) => void;
 }) {
   const router                        = useRouter();
   const [displayText,  setDisplayText]  = useState(initialText);
@@ -423,8 +426,9 @@ function NoteViewer({ contentId, text: initialText, title: initialTitle }: {
       const res = await api.updateNote(contentId, text, editTitle.trim() || undefined);
       setDisplayText(text);
       setDisplayTitle(res.title);
+      onTitleSaved(res.title);   // update the h1 in the detail card immediately
       setIsEditing(false);
-      router.refresh(); // sync the page title in the detail card below
+      router.refresh(); // sync any other server-rendered parts
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -510,7 +514,7 @@ function NoteViewer({ contentId, text: initialText, title: initialTitle }: {
 
 function SpotifyViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
   return (
-    <div className="rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-xl shadow-black/20">
+    <div className="rounded-xl overflow-hidden border border-zinc-800 shadow-xl shadow-black/20" style={{ background: "#000" }}>
       <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900 border-b border-zinc-800">
         <span className="h-2 w-2 rounded-full bg-green-500" />
         <span className="text-xs font-medium text-zinc-300">Spotify</span>
@@ -520,7 +524,7 @@ function SpotifyViewer({ embedUrl, title }: { embedUrl: string; title: string })
         src={embedUrl}
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy"
-        className="w-full border-0"
+        className="w-full border-0 block"
         style={{ height: "152px" }}
       />
     </div>

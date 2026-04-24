@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const text  = (body.text ?? "").trim();
-    const title = (body.title ?? "").trim() || text.split("\n")[0].slice(0, 120) || "Untitled note";
+    const title = (body.title ?? "").trim() || "Untitled Note";
 
     if (!text) return NextResponse.json({ error: "Note text is required" }, { status: 400 });
     if (text.length > 100_000) {

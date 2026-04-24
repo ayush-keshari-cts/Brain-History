@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     const text  = (body.text ?? "").trim();
-    const title = (body.title ?? "").trim() || text.split("\n")[0].slice(0, 120) || "Untitled note";
+    const title = (body.title ?? "").trim() || "Untitled Note";
 
     if (!text) {
       return NextResponse.json({ error: "Note text is required" }, { status: 400 });
