@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { api, type ContentItem } from "@/lib/api-client";
+import { api, type ContentItem, type CollectionItem } from "@/lib/api-client";
 import DeleteModal from "@/components/ui/DeleteModal";
 
 const TYPE_CONFIG: Record<string, { emoji: string; light: string; dark: string; grad: string }> = {
@@ -146,14 +146,52 @@ interface Props {
   item:      ContentItem;
   onDeleted: (id: string) => void;
   onUpdated: (item: ContentItem) => void;
+  // Bulk selection
+  selectMode?: boolean;
+  selected?:   boolean;
+  onSelect?:   (id: string) => void;
+  // Collections — pass the user's list so the picker can show them
+  collections?: CollectionItem[];
 }
 
-export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
+export default function ContentCard({
+  item, onDeleted, onUpdated,
+  selectMode, selected, onSelect,
+  collections,
+}: Props) {
   const [deleting,        setDeleting]        = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favLoading,      setFavLoading]      = useState(false);
   const [isPlaying,       setIsPlaying]       = useState(false);
   const [faviconFailed,   setFaviconFailed]   = useState(false);
+  const [showColPicker,   setShowColPicker]   = useState(false);
+  const [colLoading,      setColLoading]      = useState<string | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close collection picker when clicking outside
+  useEffect(() => {
+    if (!showColPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowColPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showColPicker]);
+
+  // Toggle collection membership and update item in parent
+  const handleCollectionToggle = async (colId: string, add: boolean) => {
+    setColLoading(colId);
+    try {
+      const res = add
+        ? await api.addToCollection(colId, item._id)
+        : await api.removeFromCollection(colId, item._id);
+      onUpdated({ ...item, collectionIds: res.collectionIds });
+    } catch { /* silent */ } finally {
+      setColLoading(null);
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     setDeleting(true);
@@ -220,7 +258,28 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
       />
     )}
 
-    <div className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-md dark:hover:shadow-zinc-900/50 transition-all duration-200 hover:-translate-y-0.5 ${deleting ? "opacity-40 pointer-events-none" : ""}`}>
+    <div
+      className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border overflow-hidden shadow-sm transition-all duration-200 ${
+        deleting ? "opacity-40 pointer-events-none" : ""
+      } ${
+        selectMode
+          ? selected
+            ? "border-violet-500 dark:border-violet-400 ring-2 ring-violet-500/30 dark:ring-violet-400/30 cursor-pointer"
+            : "border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-violet-300 dark:hover:border-violet-600"
+          : "border-zinc-100 dark:border-zinc-800 hover:shadow-md dark:hover:shadow-zinc-900/50 hover:-translate-y-0.5"
+      }`}
+      onClick={selectMode ? () => onSelect?.(item._id) : undefined}
+    >
+      {/* Selection checkbox — visible in selectMode */}
+      {selectMode && (
+        <div className={`absolute top-2.5 left-2.5 z-40 h-5 w-5 rounded-full border-2 flex items-center justify-center pointer-events-none transition-all ${
+          selected
+            ? "bg-violet-600 border-violet-600"
+            : "bg-white/90 dark:bg-zinc-900/90 border-zinc-300 dark:border-zinc-500"
+        }`}>
+          {selected && <CheckIcon className="h-3 w-3 text-white" />}
+        </div>
+      )}
 
       {/* Favourite button — z-20 so it sits above the play overlay */}
       <button
@@ -394,12 +453,38 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
                 <ChatIcon className="h-3.5 w-3.5" />
               </Link>
             )}
+            {!selectMode && collections && (
+              <div className="relative" ref={pickerRef}>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowColPicker((v) => !v); }}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    (item.collectionIds?.length ?? 0) > 0
+                      ? "text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10"
+                      : "text-zinc-400 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10"
+                  }`}
+                  title="Add to collection"
+                >
+                  <FolderIcon className="h-3.5 w-3.5" />
+                </button>
+                {showColPicker && (
+                  <CollectionPickerDropdown
+                    contentId={item._id}
+                    collectionIds={item.collectionIds ?? []}
+                    collections={collections}
+                    colLoading={colLoading}
+                    onToggle={handleCollectionToggle}
+                  />
+                )}
+              </div>
+            )}
+            {!selectMode && (
             <button
               onClick={() => setShowDeleteModal(true)}
               className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
               title="Delete">
               <TrashIcon className="h-3.5 w-3.5" />
             </button>
+            )}
           </div>
         </div>
       </div>
@@ -435,4 +520,62 @@ function ChatIcon({ className }: { className?: string }) {
 }
 function TrashIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>;
+}
+function CheckIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>;
+}
+function FolderIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>;
+}
+
+// ─── Collection picker dropdown ───────────────────────────────────────────────
+
+function CollectionPickerDropdown({
+  contentId, collectionIds, collections, colLoading, onToggle,
+}: {
+  contentId:     string;
+  collectionIds: string[];
+  collections:   CollectionItem[];
+  colLoading:    string | null;
+  onToggle:      (colId: string, add: boolean) => void;
+}) {
+  if (collections.length === 0) {
+    return (
+      <div className="absolute bottom-full right-0 mb-1 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg p-3 z-50 text-xs text-zinc-500 dark:text-zinc-400">
+        No collections yet. Create one from the library.
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute bottom-full right-0 mb-1 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden">
+      <p className="px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+        Add to collection
+      </p>
+      <div className="py-1 max-h-52 overflow-y-auto">
+        {collections.map((col) => {
+          const inCol   = collectionIds.includes(col._id);
+          const loading = colLoading === col._id;
+          return (
+            <button
+              key={col._id}
+              disabled={loading}
+              onClick={(e) => { e.stopPropagation(); onToggle(col._id, !inCol); }}
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            >
+              <span className="text-base leading-none">{col.emoji}</span>
+              <span className="flex-1 truncate text-left text-zinc-700 dark:text-zinc-300">{col.name}</span>
+              {loading ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin text-zinc-400 shrink-0" />
+              ) : inCol ? (
+                <CheckIcon className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {/* unused contentId suppresses linter — it's consumed by onToggle callback in parent */}
+      <span className="hidden">{contentId}</span>
+    </div>
+  );
 }

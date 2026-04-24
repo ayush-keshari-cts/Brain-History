@@ -33,6 +33,7 @@ export interface IContent extends Document {
   tags: string[];
   notes?: string;
   isFavourite: boolean;
+  collectionIds: mongoose.Types.ObjectId[];
 
   // Original uploaded file (set only for platform === "upload")
   fileUrl?:            string;   // Cloudinary secure_url
@@ -85,6 +86,7 @@ const ContentSchema = new Schema<IContent>(
     tags:                { type: [String], default: [] },
     notes:               String,
     isFavourite:         { type: Boolean, default: false },
+    collectionIds:       { type: [Schema.Types.ObjectId], ref: "Collection", default: [] },
     fileUrl:             String,
     cloudinaryPublicId:  String,
     mimeType:            String,

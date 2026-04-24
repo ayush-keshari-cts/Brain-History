@@ -26,6 +26,16 @@ export interface ContentItem {
   embeddingsCount: number;
   rawTextLength?: number;
   processingError?: string;
+  collectionIds?: string[];
+}
+
+export interface CollectionItem {
+  _id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  itemCount: number;
+  createdAt: string;
 }
 
 export interface ContentListResponse {
@@ -83,13 +93,14 @@ export const api = {
     ),
 
   /** List saved content with optional type filter + pagination */
-  listContent: (page = 1, limit = 20, type?: string) => {
+  listContent: (page = 1, limit = 20, type?: string, collectionId?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (type === "__fav__") {
       params.set("favourite", "1");
     } else if (type) {
       params.set("type", type);
     }
+    if (collectionId) params.set("collection", collectionId);
     return apiFetch<ContentListResponse>(`/api/content?${params}`);
   },
 
@@ -111,6 +122,44 @@ export const api = {
   updateNotes: (id: string, notes: string) =>
     apiFetch<{ success: boolean; notes: string }>(
       `/api/content/${id}`, { method: "PATCH", body: JSON.stringify({ notes }) }
+    ),
+
+  /** Bulk-delete multiple content items */
+  bulkDeleteContent: (ids: string[]) =>
+    apiFetch<{ success: boolean; deleted: number }>("/api/content/bulk", {
+      method: "DELETE",
+      body: JSON.stringify({ ids }),
+    }),
+
+  /** Collections */
+  listCollections: () =>
+    apiFetch<{ collections: CollectionItem[] }>("/api/collections"),
+
+  createCollection: (name: string, emoji?: string, color?: string) =>
+    apiFetch<{ collection: CollectionItem }>("/api/collections", {
+      method: "POST",
+      body: JSON.stringify({ name, emoji, color }),
+    }),
+
+  updateCollection: (id: string, updates: Partial<Pick<CollectionItem, "name" | "emoji" | "color">>) =>
+    apiFetch<{ collection: CollectionItem }>(`/api/collections/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
+
+  deleteCollection: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/collections/${id}`, { method: "DELETE" }),
+
+  addToCollection: (collectionId: string, contentId: string) =>
+    apiFetch<{ success: boolean; collectionIds: string[] }>(
+      `/api/collections/${collectionId}/items`,
+      { method: "POST", body: JSON.stringify({ contentId }) }
+    ),
+
+  removeFromCollection: (collectionId: string, contentId: string) =>
+    apiFetch<{ success: boolean; collectionIds: string[] }>(
+      `/api/collections/${collectionId}/items`,
+      { method: "DELETE", body: JSON.stringify({ contentId }) }
     ),
 
   /** Run semantic search */

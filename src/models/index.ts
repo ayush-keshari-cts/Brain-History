@@ -3,8 +3,10 @@ export { default as User }         from "./User";
 export { default as Content }      from "./Content";
 export { default as ChatSession }  from "./ChatSession";
 export { default as ContentChunk } from "./ContentChunk";
+export { default as Collection }   from "./Collection";
 
 export type { IUser }                      from "./User";
 export type { IContent }                   from "./Content";
 export type { IChatSession, IChatMessage } from "./ChatSession";
 export type { IContentChunk }              from "./ContentChunk";
+export type { ICollection }                from "./Collection";
