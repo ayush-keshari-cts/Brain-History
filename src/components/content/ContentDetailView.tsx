@@ -41,6 +41,17 @@ function getYouTubeId(url: string): string | null {
   } catch { return null; }
 }
 
+// Build Spotify embed URL from any open.spotify.com link
+function getSpotifyEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes("spotify.com")) return null;
+    const match = u.pathname.match(/\/(track|album|playlist|artist|episode|show)\/([a-zA-Z0-9]+)/);
+    if (!match) return null;
+    return `https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0`;
+  } catch { return null; }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ContentDetailView({ content }: { content: Record<string, any> }) {
   const router = useRouter();
@@ -66,6 +77,11 @@ export default function ContentDetailView({ content }: { content: Record<string,
   // YouTube embed ID (only for URL-based YouTube content)
   const youtubeId = !isUploaded && ["youtube_video", "youtube_music"].includes(content.contentType)
     ? getYouTubeId(content.url as string)
+    : null;
+
+  // Spotify embed URL (only for URL-based Spotify content, not uploaded audio)
+  const spotifyEmbedUrl = !isUploaded && content.contentType === "spotify" && content.url
+    ? getSpotifyEmbedUrl(content.url as string)
     : null;
 
   // File URL for native player / iframe
@@ -134,6 +150,14 @@ export default function ContentDetailView({ content }: { content: Record<string,
       {/* ── Media / Viewer ────────────────────────────────────────── */}
       {youtubeId ? (
         <YouTubeViewer videoId={youtubeId} title={content.title as string} />
+      ) : spotifyEmbedUrl ? (
+        <SpotifyViewer embedUrl={spotifyEmbedUrl} title={content.title as string} />
+      ) : isWordDoc && content.rawText ? (
+        <DocxViewer
+          text={content.rawText as string}
+          filename={content.title as string}
+          downloadUrl={downloadUrl ?? "#"}
+        />
       ) : showViewer && viewerFileUrl ? (
         <MediaViewer
           fileUrl={viewerFileUrl}
@@ -345,6 +369,66 @@ function YouTubeViewer({ videoId, title }: { videoId: string; title: string }) {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Spotify Embed ────────────────────────────────────────────────────────────
+
+function SpotifyViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-xl shadow-black/20">
+      <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900 border-b border-zinc-800">
+        <span className="h-2 w-2 rounded-full bg-green-500" />
+        <span className="text-xs font-medium text-zinc-300">Spotify</span>
+        <span className="text-xs text-zinc-500 truncate hidden sm:block">{title}</span>
+      </div>
+      <iframe
+        src={embedUrl}
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"
+        className="w-full border-0"
+        style={{ height: "152px" }}
+      />
+    </div>
+  );
+}
+
+// ─── DOCX Text Viewer ─────────────────────────────────────────────────────────
+
+function DocxViewer({ text, filename, downloadUrl }: { text: string; filename: string; downloadUrl: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const preview = expanded ? text : text.slice(0, 3000);
+  const isLong  = text.length > 3000;
+
+  return (
+    <div className="rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-blue-500" />
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-xs">
+            Word Document — {filename}
+          </span>
+        </div>
+        <a href={downloadUrl}
+          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors shrink-0">
+          <DownloadIcon className="h-3.5 w-3.5" /> Download
+        </a>
+      </div>
+      {/* Extracted text */}
+      <div className="px-5 py-4 max-h-[60vh] overflow-y-auto">
+        <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">
+          {preview}
+        </p>
+        {isLong && (
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="mt-3 text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline">
+            {expanded ? "Show less" : `Show full document (${(text.length / 1000).toFixed(0)}k chars)`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
