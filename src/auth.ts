@@ -95,7 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 },
               },
             },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
           ).select("_id");
 
           token.userId = (dbUser as { _id: { toString(): string } })._id.toString();

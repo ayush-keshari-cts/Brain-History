@@ -78,18 +78,6 @@ export default function ProfileContent({ name, email, image, providers, hasPassw
           <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{email}</p>
           <p className="text-xs text-zinc-400 dark:text-zinc-500">Member since {joined}</p>
         </div>
-        <div className="shrink-0 hidden sm:flex flex-col items-end gap-1.5">
-          {providers.map((p) => (
-            <span key={p} className="text-xs px-2.5 py-1 rounded-full bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20 font-medium">
-              {PROVIDER_LABEL[p] ?? p}
-            </span>
-          ))}
-          {hasPassword && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 font-medium">
-              Password
-            </span>
-          )}
-        </div>
       </div>
 
       {/* ── Theme preference ─────────────────────────────────────────── */}
