@@ -7,7 +7,7 @@ interface SaveUrlFormProps {
   onAdded: (item: ContentItem) => void;
 }
 
-type Tab = "url" | "file";
+type Tab = "url" | "file" | "note";
 
 const ACCEPT = [
   "application/pdf",
@@ -56,6 +56,12 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
   const [fileSuccess, setFileSuccess] = useState<string | null>(null);
   const fileInputRef                  = useRef<HTMLInputElement>(null);
 
+  const [noteTitle,   setNoteTitle]   = useState("");
+  const [noteText,    setNoteText]    = useState("");
+  const [noteLoading, setNoteLoading] = useState(false);
+  const [noteError,   setNoteError]   = useState<string | null>(null);
+  const [noteSuccess, setNoteSuccess] = useState<string | null>(null);
+
   const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = url.trim();
@@ -80,6 +86,30 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
       setUrlError(err instanceof Error ? err.message : "Failed to save URL");
     } finally {
       setUrlLoading(false);
+    }
+  };
+
+  const handleNoteSave = async () => {
+    const text = noteText.trim();
+    if (!text) return;
+    setNoteLoading(true); setNoteError(null); setNoteSuccess(null);
+    try {
+      const res = await api.addNote(text, noteTitle.trim() || undefined);
+      setNoteSuccess(`Saved: "${res.title}"`);
+      setNoteTitle("");
+      setNoteText("");
+      onAdded({
+        _id: res.contentId, url: "(note)", contentType: res.contentType ?? "note",
+        platform: "note", title: res.title,
+        savedAt: new Date().toISOString(),
+        processingStatus: "pending",
+        contentSize: res.isLarge ? "large" : "small",
+        tags: [], isFavourite: false, embeddingsCount: 0,
+      });
+    } catch (err) {
+      setNoteError(err instanceof Error ? err.message : "Failed to save note");
+    } finally {
+      setNoteLoading(false);
     }
   };
 
@@ -120,15 +150,16 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
     <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm">
       {/* Tabs */}
       <div className="flex border-b border-zinc-100 dark:border-zinc-800">
-        {(["url", "file"] as const).map((t) => (
+        {(["url", "file", "note"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-all border-b-2 ${
               tab === t
                 ? "text-violet-600 dark:text-violet-400 border-violet-500 dark:border-violet-400 bg-violet-50/50 dark:bg-violet-500/5"
                 : "text-zinc-500 dark:text-zinc-400 border-transparent hover:text-zinc-800 dark:hover:text-zinc-200"
             }`}>
-            {t === "url" ? <LinkIcon className="h-3.5 w-3.5" /> : <UploadIcon className="h-3.5 w-3.5" />}
-            {t === "url" ? "Save URL" : "Upload File"}
+            {t === "url"  && <><LinkIcon   className="h-3.5 w-3.5" />Save URL</>}
+            {t === "file" && <><UploadIcon className="h-3.5 w-3.5" />Upload File</>}
+            {t === "note" && <><NoteIcon   className="h-3.5 w-3.5" />Quick Note</>}
           </button>
         ))}
       </div>
@@ -221,6 +252,42 @@ export default function SaveUrlForm({ onAdded }: SaveUrlFormProps) {
             {fileSuccess && <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">✓ {fileSuccess}</p>}
           </>
         )}
+
+        {/* Note tab */}
+        {tab === "note" && (
+          <>
+            <input
+              type="text"
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              placeholder="Title (optional — auto-generated from first line)"
+              disabled={noteLoading}
+              className="w-full px-3 py-2.5 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 dark:focus:border-amber-500 disabled:opacity-50 transition-all"
+            />
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder={"Paste or type anything — a password, a code snippet, a quick thought…"}
+              rows={6}
+              disabled={noteLoading}
+              className="w-full px-3 py-2.5 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 dark:focus:border-amber-500 disabled:opacity-50 transition-all font-mono resize-none leading-relaxed"
+            />
+            <button
+              onClick={handleNoteSave}
+              disabled={noteLoading || !noteText.trim()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20"
+            >
+              {noteLoading
+                ? <><span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</>
+                : <><NoteIcon className="h-4 w-4" /> Save Note</>}
+            </button>
+            {noteError   && <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5">⚠ {noteError}</p>}
+            {noteSuccess && <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">✓ {noteSuccess}</p>}
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              Notes are indexed for AI search · up to 100,000 characters
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -268,4 +335,7 @@ function SaveIcon({ className }: { className?: string }) {
 }
 function XIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
+}
+function NoteIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
 }

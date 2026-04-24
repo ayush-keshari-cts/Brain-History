@@ -70,6 +70,18 @@ export const api = {
       body: JSON.stringify({ url, tags, notes }),
     }),
 
+  /** Save a plain-text note */
+  addNote: (text: string, title?: string) =>
+    apiFetch<{ success: boolean; contentId: string; title: string; contentType: string; isLarge: boolean }>(
+      "/api/note", { method: "POST", body: JSON.stringify({ text, title }) }
+    ),
+
+  /** Update an existing note's title and body */
+  updateNote: (id: string, text: string, title?: string) =>
+    apiFetch<{ success: boolean; title: string; isLarge: boolean }>(
+      `/api/note/${id}`, { method: "PATCH", body: JSON.stringify({ text, title }) }
+    ),
+
   /** List saved content with optional type filter + pagination */
   listContent: (page = 1, limit = 20, type?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });

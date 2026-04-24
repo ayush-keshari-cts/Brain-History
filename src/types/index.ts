@@ -21,6 +21,7 @@ export enum ContentType {
   SPOTIFY       = "spotify",
   AUDIO         = "audio",
   VIDEO         = "video",
+  NOTE          = "note",
   UNKNOWN       = "unknown",
 }
 

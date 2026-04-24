@@ -21,6 +21,7 @@ const TYPE_CONFIG: Record<string, { emoji: string; light: string; dark: string; 
   spotify:       { emoji: "♫",  light: "bg-green-50 text-green-700 border-green-100",       dark: "dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20",  grad: "from-green-500/20 via-green-400/10 to-transparent dark:from-green-500/15" },
   audio:         { emoji: "♫",  light: "bg-green-50 text-green-700 border-green-100",       dark: "dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20",  grad: "from-green-500/20 via-green-400/10 to-transparent dark:from-green-500/15" },
   video:         { emoji: "▶",  light: "bg-red-50 text-red-600 border-red-100",             dark: "dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",        grad: "from-red-500/20 via-red-400/10 to-transparent dark:from-red-500/15" },
+  note:          { emoji: "✎",  light: "bg-amber-50 text-amber-700 border-amber-100",        dark: "dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",   grad: "from-amber-500/20 via-amber-400/10 to-transparent dark:from-amber-500/15" },
   unknown:       { emoji: "◇",  light: "bg-zinc-100 text-zinc-600 border-zinc-200",         dark: "dark:bg-zinc-700/30 dark:text-zinc-400 dark:border-zinc-600/30",     grad: "from-zinc-400/20 via-zinc-300/10 to-transparent dark:from-zinc-400/15" },
 };
 
@@ -62,6 +63,11 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   video: (
     <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth={1.3}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+    </svg>
+  ),
+  note: (
+    <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth={1.3}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
     </svg>
   ),
   github: (
