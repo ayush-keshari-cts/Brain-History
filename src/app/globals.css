@@ -19,6 +19,31 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Serif display font ───────────────────────────────────────────────────── */
+
+.font-display {
+  font-family: var(--font-serif), 'Georgia', 'Times New Roman', serif;
+}
+
+/* ── Dark design tokens ───────────────────────────────────────────────────── */
+
+html.dark {
+  --bh-bg:         #0B0B0F;
+  --bh-bg-1:       #111116;
+  --bh-bg-2:       #16161D;
+  --bh-bg-3:       #1C1C25;
+  --bh-border:     rgba(255,255,255,0.06);
+  --bh-border-md:  rgba(255,255,255,0.10);
+  --bh-text:       #F5F5F7;
+  --bh-muted:      rgba(245,245,247,0.60);
+  --bh-dim:        rgba(245,245,247,0.40);
+  --bh-faint:      rgba(245,245,247,0.25);
+  --bh-brand:      #7C5CFF;
+  --bh-brand-lt:   #9B7BFF;
+  --bh-brand-soft: rgba(124,92,255,0.12);
+  --bh-brand-line: rgba(124,92,255,0.25);
+}
+
 /* ── Custom scrollbar ─────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -31,9 +56,7 @@ body {
 
 /* ── Selection ────────────────────────────────────────────────────────────── */
 
-::selection {
-  background: rgba(139, 92, 246, 0.25);
-}
+::selection { background: rgba(139, 92, 246, 0.25); }
 
 /* ── Gradient text ────────────────────────────────────────────────────────── */
 
@@ -44,7 +67,7 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ── Dot grid pattern (auth page background) ─────────────────────────────── */
+/* ── Dot grid pattern ────────────────────────────────────────────────────── */
 
 .dot-bg {
   background-image: radial-gradient(circle, rgba(139, 92, 246, 0.15) 1px, transparent 1px);
@@ -71,7 +94,7 @@ body {
 
 @keyframes shimmer {
   0%   { background-position: -500px 0; }
-  100% { background-position: 500px 0; }
+  100% { background-position:  500px 0; }
 }
 
 .skeleton {
@@ -88,10 +111,43 @@ body {
 html.dark .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(139, 92, 246, 0.04) 0%,
-    rgba(139, 92, 246, 0.12) 50%,
-    rgba(139, 92, 246, 0.04) 100%
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(139, 92, 246, 0.14) 50%,
+    rgba(139, 92, 246, 0.05) 100%
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes fabIn {
+  from { transform: translate(-50%, 16px); opacity: 0; }
+  to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1;   box-shadow: 0 0 0 0 rgba(74,222,128,0.4); }
+  50%       { opacity: 0.6; box-shadow: 0 0 0 4px rgba(74,222,128,0);  }
+}
+
+.animate-fade-in-up { animation: fadeInUp 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fab-in     { animation: fabIn    0.28s cubic-bezier(0.16,1,0.3,1);      }
+.animate-live       { animation: livePulse 2s ease-in-out infinite;               }
+
+/* ── Card stagger delays ─────────────────────────────────────────────────── */
+
+.card-stagger:nth-child(1)  { animation-delay: 0.02s; }
+.card-stagger:nth-child(2)  { animation-delay: 0.05s; }
+.card-stagger:nth-child(3)  { animation-delay: 0.08s; }
+.card-stagger:nth-child(4)  { animation-delay: 0.11s; }
+.card-stagger:nth-child(5)  { animation-delay: 0.14s; }
+.card-stagger:nth-child(6)  { animation-delay: 0.17s; }
+.card-stagger:nth-child(7)  { animation-delay: 0.20s; }
+.card-stagger:nth-child(8)  { animation-delay: 0.23s; }
+.card-stagger:nth-child(n+9){ animation-delay: 0.26s; }

@@ -33,10 +33,11 @@ interface TypeFilterBarProps {
   onChange:       (type: string | undefined) => void;
   availableTypes: AvailableType[];
   hasFavourites:  boolean;
+  total?:         number;
 }
 
 export default function TypeFilterBar({
-  active, onChange, availableTypes, hasFavourites,
+  active, onChange, availableTypes, hasFavourites, total,
 }: TypeFilterBarProps) {
   // Don't render the bar at all when there's nothing to filter
   if (availableTypes.length === 0 && !hasFavourites) return null;
@@ -49,6 +50,7 @@ export default function TypeFilterBar({
         emoji="◈"
         active={active === undefined}
         onClick={() => onChange(undefined)}
+        count={total}
       />
 
       {/* Favourites — only if user has some */}
@@ -62,7 +64,7 @@ export default function TypeFilterBar({
       )}
 
       {/* One chip per content type the user actually has */}
-      {availableTypes.map(({ value }) => {
+      {availableTypes.map(({ value, count }) => {
         const meta = TYPE_META[value];
         if (!meta) return null; // unknown / future type
         return (
@@ -72,6 +74,7 @@ export default function TypeFilterBar({
             emoji={meta.emoji}
             active={active === value}
             onClick={() => onChange(value)}
+            count={count}
           />
         );
       })}
@@ -80,12 +83,13 @@ export default function TypeFilterBar({
 }
 
 function Chip({
-  label, emoji, active, onClick,
+  label, emoji, active, onClick, count,
 }: {
-  label: string;
-  emoji: string;
-  active: boolean;
+  label:   string;
+  emoji:   string;
+  active:  boolean;
   onClick: () => void;
+  count?:  number;
 }) {
   return (
     <button
@@ -93,11 +97,20 @@ function Chip({
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
         active
           ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20 border border-transparent"
-          : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
+          : "bg-white dark:bg-[#16161D] text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.08] hover:border-violet-400/50 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
       }`}
     >
-      <span className="text-xs">{emoji}</span>
+      <span>{emoji}</span>
       {label}
+      {count !== undefined && (
+        <span className={`px-1.5 py-px rounded-md text-[10px] leading-none font-semibold ${
+          active
+            ? "bg-white/20 text-white"
+            : "bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400"
+        }`}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }

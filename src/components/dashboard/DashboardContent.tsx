@@ -36,6 +36,9 @@ export default function DashboardContent() {
   const [bulkDeleting,        setBulkDeleting]        = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
+  // ── Save form toggle ─────────────────────────────────────────────────────────
+  const [showSaveForm, setShowSaveForm] = useState(false);
+
   // ── Fetch collections for picker ─────────────────────────────────────────
   const refreshCollections = useCallback(() => {
     api.listCollections()
@@ -84,7 +87,6 @@ export default function DashboardContent() {
     setLoading(true);
     setPage(1);
     fetchPage(1, activeType, activeCollection);
-    // Reset selection when filter changes
     setSelectMode(false);
     setSelectedIds(new Set());
   }, [activeType, activeCollection, fetchPage]);
@@ -112,19 +114,18 @@ export default function DashboardContent() {
       return [newItem, ...prev];
     });
     setTotal((t) => t + 1);
-    refreshTypes(); // new type chip may need to appear
+    refreshTypes();
   };
 
   const handleDeleted = (id: string) => {
     setItems((prev) => prev.filter((i) => i._id !== id));
     setTotal((t) => Math.max(0, t - 1));
     setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
-    refreshTypes(); // type chip may disappear if last of its kind
+    refreshTypes();
   };
 
   const handleUpdated = (updated: ContentItem) => {
     setItems((prev) => prev.map((i) => (i._id === updated._id ? updated : i)));
-    // Refresh collection counts in sidebar if membership changed
     if (JSON.stringify(updated.collectionIds) !== JSON.stringify(
       items.find((i) => i._id === updated._id)?.collectionIds
     )) {
@@ -178,7 +179,7 @@ export default function DashboardContent() {
   const selectedCount = selectedIds.size;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-7">
+    <div className="max-w-5xl mx-auto px-6 py-8 space-y-7">
 
       {/* Bulk delete modal */}
       {showBulkDeleteModal && (
@@ -190,28 +191,44 @@ export default function DashboardContent() {
         />
       )}
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      {/* ── Breadcrumb ── */}
+      <div className="flex items-center gap-1.5 text-xs">
+        <span className="text-zinc-400 dark:text-zinc-600">Workspace</span>
+        <span className="text-zinc-300 dark:text-zinc-700">/</span>
+        <span className="text-zinc-500 dark:text-zinc-500">Library</span>
+        <span className="mx-1 text-zinc-300 dark:text-zinc-700">•</span>
+        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-live" />
+          Synced
+        </span>
+      </div>
+
+      {/* ── Hero header ── */}
+      <div className="flex items-start justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Your <span className="gradient-text">Library</span>
+          <h1 className="text-[2.25rem] font-bold tracking-tight text-zinc-900 dark:text-[#F5F5F7] leading-[1.15]">
+            Your second{" "}
+            <em className="font-display not-italic gradient-text">brain</em>
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Save anything — AI makes it searchable and conversational.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          {!loading && total > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
-              {total} item{total !== 1 ? "s" : ""}
+          {!loading && (
+            <div className="flex items-center gap-5 mt-3 flex-wrap">
+              <StatPill icon={<ItemsIcon className="h-3.5 w-3.5" />} value={total} label="items saved" />
+              {availableTypes.length > 0 && (
+                <StatPill icon={<TypesIcon className="h-3.5 w-3.5" />} value={availableTypes.length} label="content types" />
+              )}
+              {collections.length > 0 && (
+                <StatPill icon={<CollectionsIcon className="h-3.5 w-3.5" />} value={collections.length} label="collections" />
+              )}
             </div>
           )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           {pendingCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 text-amber-700 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 text-amber-700 dark:text-amber-400">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
               {pendingCount} indexing
-            </div>
+            </span>
           )}
           {!loading && items.length > 0 && (
             <button
@@ -219,29 +236,47 @@ export default function DashboardContent() {
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                 selectMode
                   ? "bg-violet-600 border-violet-600 text-white hover:bg-violet-700"
-                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
+                  : "bg-white dark:bg-[#16161D] border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:border-violet-400/50 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400"
               }`}
             >
               <CheckboxIcon className="h-3.5 w-3.5" />
               {selectMode ? "Cancel" : "Select"}
             </button>
           )}
+          <button
+            onClick={() => setShowSaveForm((v) => !v)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              showSaveForm
+                ? "bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08]"
+                : "text-white bg-[#7C5CFF] hover:bg-[#9B7BFF] shadow-lg shadow-violet-500/25"
+            }`}
+          >
+            <PlusIcon className="h-4 w-4" />
+            {showSaveForm ? "Close" : "Save new"}
+          </button>
         </div>
       </div>
 
-      <SaveUrlForm onAdded={handleAdded} />
+      {/* ── Save form (toggleable) ── */}
+      {showSaveForm && (
+        <div className="animate-fade-in-up">
+          <SaveUrlForm onAdded={handleAdded} />
+        </div>
+      )}
+
       <TypeFilterBar
         active={activeType}
         onChange={setActiveType}
         availableTypes={availableTypes}
         hasFavourites={hasFavourites}
+        total={total}
       />
 
       {/* ── Content grid ── */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-56 rounded-2xl skeleton border border-zinc-100 dark:border-zinc-800" />
+            <div key={i} className="h-56 rounded-2xl skeleton border border-zinc-100 dark:border-white/[0.06]" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -250,16 +285,17 @@ export default function DashboardContent() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (
-              <ContentCard
-                key={item._id}
-                item={item}
-                onDeleted={handleDeleted}
-                onUpdated={handleUpdated}
-                selectMode={selectMode}
-                selected={selectedIds.has(item._id)}
-                onSelect={toggleSelect}
-                collections={collections}
-              />
+              <div key={item._id} className="card-stagger animate-fade-in-up">
+                <ContentCard
+                  item={item}
+                  onDeleted={handleDeleted}
+                  onUpdated={handleUpdated}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(item._id)}
+                  onSelect={toggleSelect}
+                  collections={collections}
+                />
+              </div>
             ))}
           </div>
           {hasMore && (
@@ -267,7 +303,7 @@ export default function DashboardContent() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-violet-300 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400 transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-white dark:bg-[#16161D] border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:border-violet-400/50 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400 transition-all disabled:opacity-50"
               >
                 {loadingMore ? (
                   <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Loading…</>
@@ -282,32 +318,44 @@ export default function DashboardContent() {
 
       {/* ── Floating bulk action bar ── */}
       {selectMode && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-200 ${
-          selectedCount > 0 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
-        }`}>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900 dark:bg-zinc-100 shadow-2xl border border-zinc-700 dark:border-zinc-300">
-            <span className="text-sm font-medium text-white dark:text-zinc-900">
-              {selectedCount} selected
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fab-in">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#111116]/95 backdrop-blur-xl shadow-2xl border border-white/[0.08]">
+            <span className="text-sm font-medium text-white/90">
+              {selectedCount > 0 ? `${selectedCount} selected` : "Select items"}
             </span>
-            <div className="h-4 w-px bg-zinc-700 dark:bg-zinc-300" />
-            <button onClick={selectAll} className="text-xs font-medium text-zinc-400 dark:text-zinc-500 hover:text-white dark:hover:text-zinc-900 transition-colors">
-              Select all
-            </button>
-            <button onClick={clearSelect} className="text-xs font-medium text-zinc-400 dark:text-zinc-500 hover:text-white dark:hover:text-zinc-900 transition-colors">
-              Clear
-            </button>
-            <button
-              onClick={() => setShowBulkDeleteModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-red-500 hover:bg-red-600 text-white transition-colors"
-            >
-              <TrashIcon className="h-3.5 w-3.5" />
-              Delete
-            </button>
+            {selectedCount > 0 && (
+              <>
+                <div className="h-4 w-px bg-white/10" />
+                <button onClick={selectAll} className="text-xs font-medium text-white/40 hover:text-white/80 transition-colors">
+                  Select all
+                </button>
+                <button onClick={clearSelect} className="text-xs font-medium text-white/40 hover:text-white/80 transition-colors">
+                  Clear
+                </button>
+                <button
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-red-500 hover:bg-red-400 text-white transition-colors"
+                >
+                  <TrashIcon className="h-3.5 w-3.5" />
+                  Delete {selectedCount}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {selectMode && <div className="h-20" />}
+    </div>
+  );
+}
+
+function StatPill({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+  return (
+    <div className="inline-flex items-center gap-1.5 text-sm">
+      <span className="text-zinc-400 dark:text-zinc-600">{icon}</span>
+      <span className="font-semibold text-zinc-700 dark:text-zinc-300">{value.toLocaleString()}</span>
+      <span className="text-zinc-400 dark:text-zinc-600">{label}</span>
     </div>
   );
 }
@@ -325,16 +373,28 @@ function EmptyState({ filtered }: { filtered: boolean }) {
           {filtered ? "No content matches this filter" : "Your library is empty"}
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-xs">
-          {filtered ? "Try a different filter or save more content." : "Paste a URL or upload a file above to get started."}
+          {filtered ? "Try a different filter or save more content." : 'Click "Save new" above to get started.'}
         </p>
       </div>
     </div>
   );
 }
 
+function PlusIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>;
+}
 function CheckboxIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4"/></svg>;
 }
 function TrashIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>;
+}
+function ItemsIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>;
+}
+function TypesIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" /></svg>;
+}
+function CollectionsIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.25 2.25 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg>;
 }

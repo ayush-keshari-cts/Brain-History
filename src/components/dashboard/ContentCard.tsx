@@ -238,7 +238,6 @@ export default function ContentCard({
 
   const tc = TYPE_CONFIG[item.contentType] ?? TYPE_CONFIG.unknown;
   const sc = STATUS_CONFIG[item.processingStatus] ?? STATUS_CONFIG.completed;
-  const typeBadge = `${tc.light} ${tc.dark}`;
 
   const domain = isUploaded
     ? "Uploaded file"
@@ -259,14 +258,14 @@ export default function ContentCard({
     )}
 
     <div
-      className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border overflow-hidden shadow-sm transition-all duration-200 ${
+      className={`card-accent relative group flex flex-col rounded-2xl bg-white dark:bg-[#16161D] border overflow-hidden shadow-sm transition-all duration-200 ${
         deleting ? "opacity-40 pointer-events-none" : ""
       } ${
         selectMode
           ? selected
             ? "border-violet-500 dark:border-violet-400 ring-2 ring-violet-500/30 dark:ring-violet-400/30 cursor-pointer"
-            : "border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-violet-300 dark:hover:border-violet-600"
-          : "border-zinc-100 dark:border-zinc-800 hover:shadow-md dark:hover:shadow-zinc-900/50 hover:-translate-y-0.5"
+            : "border-zinc-200 dark:border-white/[0.08] cursor-pointer hover:border-violet-300 dark:hover:border-violet-600"
+          : "border-zinc-100 dark:border-white/[0.06] hover:shadow-md dark:hover:shadow-black/50 hover:-translate-y-0.5"
       }`}
       onClick={selectMode ? () => onSelect?.(item._id) : undefined}
     >
@@ -293,6 +292,13 @@ export default function ContentCard({
 
       {/* ── Banner area: inline player OR thumbnail/placeholder with play overlay ── */}
       <div className="relative">
+        {/* Glass type badge — top-left overlay, hidden in select/play mode */}
+        {!isPlaying && !selectMode && (
+          <div className="absolute top-2.5 left-2.5 z-20 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold backdrop-blur-sm bg-black/40 dark:bg-black/60 border border-white/20 text-white pointer-events-none">
+            <span className="text-[11px] leading-none">{tc.emoji}</span>
+            <span className="capitalize">{item.contentType.replace(/_/g, " ")}</span>
+          </div>
+        )}
         {isPlaying && playInfo ? (
           /* ── Inline player ── */
           <div className="relative w-full bg-black">
@@ -409,22 +415,28 @@ export default function ContentCard({
 
         {/* Badges */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${sc.badge}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
-            {item.processingStatus}
-          </span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize border ${typeBadge}`}>
-            {item.contentType.replace(/_/g, " ")}
-          </span>
-          {item.contentSize === "large" && (
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-violet-50 text-violet-700 border border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
-              large
+          {item.processingStatus !== "completed" && (
+            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${sc.badge}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
+              {item.processingStatus}
+            </span>
+          )}
+          {item.processingStatus === "completed" && (item.embeddingsCount ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20">
+              <SparklesIcon className="h-2.5 w-2.5" />
+              AI ready
+            </span>
+          )}
+          {item.contentSize === "large" && item.processingStatus === "completed" && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+              <ChatBubbleIcon className="h-2.5 w-2.5" />
+              Chat ready
             </span>
           )}
         </div>
 
         {/* Date + actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-white/[0.06]">
           <span className="text-xs text-zinc-400 dark:text-zinc-500">{dateStr}</span>
           <div className="flex items-center gap-0.5">
             {!isUploaded && (
@@ -536,6 +548,12 @@ function FolderIcon({ className }: { className?: string }) {
 function CollectionIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.25 2.25 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg>;
 }
+function SparklesIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" /></svg>;
+}
+function ChatBubbleIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>;
+}
 
 // ─── Collection picker dropdown ───────────────────────────────────────────────
 
@@ -550,15 +568,15 @@ function CollectionPickerDropdown({
 }) {
   if (collections.length === 0) {
     return (
-      <div className="absolute bottom-full right-0 mb-1 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg p-3 z-50 text-xs text-zinc-500 dark:text-zinc-400">
-        No collections yet. Create one from the library.
+      <div className="absolute bottom-full right-0 mb-1 w-48 bg-white dark:bg-[#16161D] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-lg p-3 z-50 text-xs text-zinc-500 dark:text-zinc-400">
+        No collections yet. Create one from the sidebar.
       </div>
     );
   }
 
   return (
-    <div className="absolute bottom-full right-0 mb-1 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden">
-      <p className="px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+    <div className="absolute bottom-full right-0 mb-1 w-52 bg-white dark:bg-[#16161D] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-lg z-50 overflow-hidden">
+      <p className="px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-white/[0.06]">
         Add to collection
       </p>
       <div className="py-1 max-h-52 overflow-y-auto">
@@ -570,7 +588,7 @@ function CollectionPickerDropdown({
               key={col._id}
               disabled={loading}
               onClick={(e) => { e.stopPropagation(); onToggle(col._id, !inCol); }}
-              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors disabled:opacity-50"
             >
               <span className="h-5 w-5 shrink-0 flex items-center justify-center rounded bg-violet-50 dark:bg-violet-500/10">
                 {col.emoji && col.emoji !== "brain" ? (

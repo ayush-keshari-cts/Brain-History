@@ -13,97 +13,136 @@ interface AppShellProps {
 }
 
 const NAV = [
-  { href: "/dashboard", label: "Library",   icon: LibraryIcon },
-  { href: "/search",    label: "AI Search",  icon: SearchIcon },
-  { href: "/profile",   label: "Profile",    icon: UserIcon },
+  { href: "/dashboard", label: "Library",   icon: LibraryIcon  },
+  { href: "/search",    label: "AI Search",  icon: SparkleIcon, tag: "AI" },
+  { href: "/profile",   label: "Profile",    icon: UserIcon     },
 ];
 
-// Icon text-color classes per collection color (for the brain SVG icon)
-const COLOR_ICON: Record<string, string> = {
-  violet:  "text-violet-500  dark:text-violet-400",
-  blue:    "text-blue-500    dark:text-blue-400",
-  green:   "text-green-500   dark:text-green-400",
-  emerald: "text-emerald-500 dark:text-emerald-400",
-  red:     "text-red-500     dark:text-red-400",
-  orange:  "text-orange-500  dark:text-orange-400",
-  amber:   "text-amber-500   dark:text-amber-400",
-  pink:    "text-pink-500    dark:text-pink-400",
-  sky:     "text-sky-500     dark:text-sky-400",
-  teal:    "text-teal-500    dark:text-teal-400",
-};
-
-// Background tint classes per collection color (for the brain icon container)
-const COLOR_BG: Record<string, string> = {
-  violet:  "bg-violet-50  dark:bg-violet-500/10",
-  blue:    "bg-blue-50    dark:bg-blue-500/10",
-  green:   "bg-green-50   dark:bg-green-500/10",
-  emerald: "bg-emerald-50 dark:bg-emerald-500/10",
-  red:     "bg-red-50     dark:bg-red-500/10",
-  orange:  "bg-orange-50  dark:bg-orange-500/10",
-  amber:   "bg-amber-50   dark:bg-amber-500/10",
-  pink:    "bg-pink-50    dark:bg-pink-500/10",
-  sky:     "bg-sky-50     dark:bg-sky-500/10",
-  teal:    "bg-teal-50    dark:bg-teal-500/10",
+// Gradient per collection color for the sidebar dot
+const COL_GRAD: Record<string, string> = {
+  violet:  "linear-gradient(135deg,#7C3AED,#A78BFA)",
+  blue:    "linear-gradient(135deg,#1D4ED8,#60A5FA)",
+  green:   "linear-gradient(135deg,#059669,#34D399)",
+  emerald: "linear-gradient(135deg,#047857,#10B981)",
+  red:     "linear-gradient(135deg,#B91C1C,#FCA5A5)",
+  orange:  "linear-gradient(135deg,#C2410C,#FB923C)",
+  amber:   "linear-gradient(135deg,#B45309,#FCD34D)",
+  pink:    "linear-gradient(135deg,#BE185D,#F9A8D4)",
+  sky:     "linear-gradient(135deg,#0369A1,#7DD3FC)",
+  teal:    "linear-gradient(135deg,#0F766E,#5EEAD4)",
 };
 
 export default function AppShell({ user, children }: AppShellProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
+  // Initials for avatar
+  const initials = user.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen flex bg-zinc-50 dark:bg-[#0B0B0F]">
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 z-20 bg-white dark:bg-zinc-950 border-r border-zinc-100 dark:border-zinc-800/60">
+      <aside className="hidden md:flex md:w-[252px] md:flex-col md:fixed md:inset-y-0 z-20
+                        bg-white dark:bg-[#111116]
+                        border-r border-zinc-100 dark:border-white/[0.06]">
 
         {/* Brand */}
-        <div className="h-14 flex items-center px-5 shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
+        <div className="h-14 flex items-center px-4 shrink-0 border-b border-zinc-100 dark:border-white/[0.06]">
           <Link href="/dashboard" className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
-              <BrainIcon className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100 truncate">
-              Brain<span className="gradient-text">History</span>
+            <LogoMark />
+            <span className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-[#F5F5F7] truncate">
+              Brain<span className="font-normal dark:opacity-65">History</span>
             </span>
           </Link>
           <button
             onClick={toggleTheme}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="shrink-0 ml-1 p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+            title={isDark ? "Light mode" : "Dark mode"}
+            className="shrink-0 ml-1 p-1.5 rounded-lg text-zinc-400 dark:text-white/40
+                       hover:text-zinc-700 dark:hover:text-white/80
+                       hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
           >
-            {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+            {isDark ? <SunIcon className="h-3.5 w-3.5" /> : <MoonIcon className="h-3.5 w-3.5" />}
           </button>
         </div>
 
-        {/* Nav + Collections — scrollable */}
-        <div className="flex-1 overflow-y-auto flex flex-col">
+        {/* Scrollable nav area */}
+        <div className="flex-1 overflow-y-auto flex flex-col py-3 gap-1">
+
+          {/* Search trigger */}
+          <div className="px-3 mb-1">
+            <Link
+              href="/search"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl
+                         bg-zinc-100 dark:bg-[#16161D]
+                         border border-zinc-200 dark:border-white/[0.06]
+                         text-zinc-500 dark:text-white/40
+                         hover:border-zinc-300 dark:hover:border-white/[0.10]
+                         hover:text-zinc-700 dark:hover:text-white/70
+                         transition-all text-xs"
+            >
+              <SearchIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              <span className="flex-1">Search or ask anything</span>
+              <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded
+                              bg-white dark:bg-white/[0.04]
+                              border border-zinc-200 dark:border-white/[0.06]
+                              text-zinc-400 dark:text-white/25">⌘K</kbd>
+            </Link>
+          </div>
+
+          {/* Workspace label */}
+          <div className="px-4 py-1">
+            <span className="text-[10.5px] font-medium tracking-widest uppercase
+                             text-zinc-400 dark:text-white/25">Workspace</span>
+          </div>
 
           {/* Main nav */}
-          <nav className="px-2.5 pt-4 pb-2 space-y-0.5 shrink-0">
-            {NAV.map(({ href, label, icon: Icon }) => {
+          <nav className="px-2 space-y-0.5">
+            {NAV.map(({ href, label, icon: Icon, tag }) => {
               const active = pathname === href || (href !== "/" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
+                  className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 group ${
                     active
-                      ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300"
-                      : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+                      ? "bg-violet-50 dark:bg-[var(--bh-brand-soft,rgba(124,92,255,0.12))] text-violet-700 dark:text-[#F5F5F7]"
+                      : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"}`} />
-                  {label}
-                  {active && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-500 dark:bg-violet-400" />}
+                  {/* Left active indicator */}
+                  {active && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                                     bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+                  )}
+                  <Icon className={`h-4 w-4 shrink-0 ${
+                    active
+                      ? "text-violet-600 dark:text-[#9B7BFF]"
+                      : "text-zinc-400 dark:text-white/40 group-hover:text-zinc-600 dark:group-hover:text-white/70"
+                  }`} />
+                  <span className="flex-1 truncate">{label}</span>
+                  {tag && (
+                    <span className="font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px]
+                                     bg-violet-100 dark:bg-[rgba(124,92,255,0.15)]
+                                     text-violet-700 dark:text-[#9B7BFF]
+                                     border border-violet-200 dark:border-[rgba(124,92,255,0.25)]
+                                     tracking-wide uppercase">{tag}</span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Divider */}
-          <div className="mx-4 border-t border-zinc-100 dark:border-zinc-800/60" />
+          <div className="mx-4 my-2 border-t border-zinc-100 dark:border-white/[0.06]" />
 
-          {/* Collections — only shown on dashboard */}
+          {/* Collections — only on dashboard */}
           {pathname.startsWith("/dashboard") && (
             <Suspense fallback={<CollectionsSkeleton />}>
               <CollectionsSideSection />
@@ -111,40 +150,31 @@ export default function AppShell({ user, children }: AppShellProps) {
           )}
         </div>
 
-        {/* AI badge */}
-        <div className="px-3 pb-2 shrink-0">
-          <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
-            <SparkleIcon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400 shrink-0" />
-            <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">AI Powered</span>
-          </div>
-        </div>
-
         {/* User section */}
-        <div className="shrink-0 px-2.5 py-3 border-t border-zinc-100 dark:border-zinc-800/60">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900">
-            <Avatar name={user.name} image={user.image} size={28} />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold truncate text-zinc-800 dark:text-zinc-200">{user.name}</p>
-              <p className="text-xs truncate text-zinc-400 dark:text-zinc-500">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-            className="mt-1 w-full text-left px-3 py-1.5 text-xs rounded-xl text-zinc-400 dark:text-zinc-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-150"
+        <div className="shrink-0 px-3 py-3 border-t border-zinc-100 dark:border-white/[0.06]">
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl
+                          hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-all cursor-pointer"
+               onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+               title="Sign out"
           >
-            Sign out
-          </button>
+            <Avatar name={user.name} image={user.image} initials={initials} size={28} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate text-zinc-800 dark:text-[#F5F5F7]">{user.name}</p>
+              <p className="text-[10px] truncate text-zinc-400 dark:text-white/40 font-mono">{user.email}</p>
+            </div>
+            <ChevronIcon className="h-3.5 w-3.5 text-zinc-300 dark:text-white/20 shrink-0" />
+          </div>
         </div>
       </aside>
 
       {/* ── Mobile top bar ─────────────────────────────────────────────── */}
-      <header className="md:hidden fixed inset-x-0 top-0 h-14 z-20 flex items-center px-4 gap-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60">
+      <header className="md:hidden fixed inset-x-0 top-0 h-14 z-20 flex items-center px-4 gap-4
+                         bg-white/90 dark:bg-[#111116]/90 backdrop-blur-sm
+                         border-b border-zinc-100 dark:border-white/[0.06]">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-            <BrainIcon className="h-3.5 w-3.5 text-white" />
-          </div>
-          <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-            Brain<span className="gradient-text">History</span>
+          <LogoMark size={24} />
+          <span className="font-semibold text-sm text-zinc-900 dark:text-[#F5F5F7]">
+            Brain<span className="font-normal dark:opacity-65">History</span>
           </span>
         </Link>
         <div className="flex-1" />
@@ -152,10 +182,10 @@ export default function AppShell({ user, children }: AppShellProps) {
           <Link
             key={href}
             href={href}
-            className={`text-sm font-medium transition-colors ${
+            className={`text-xs font-medium transition-colors ${
               pathname.startsWith(href)
-                ? "text-violet-600 dark:text-violet-400"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "text-violet-600 dark:text-[#9B7BFF]"
+                : "text-zinc-500 dark:text-white/50 hover:text-zinc-900 dark:hover:text-white"
             }`}
           >
             {label}
@@ -163,21 +193,16 @@ export default function AppShell({ user, children }: AppShellProps) {
         ))}
         <button
           onClick={toggleTheme}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+          className="p-1.5 rounded-lg text-zinc-400 dark:text-white/40
+                     hover:text-zinc-700 dark:hover:text-white
+                     hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
         >
-          {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-        </button>
-        <button
-          onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-          className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-        >
-          Sign out
+          {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
         </button>
       </header>
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className="flex-1 md:ml-60 min-h-screen">
+      <main className="flex-1 md:ml-[252px] min-h-screen">
         <div className="pt-14 md:pt-0 h-full">{children}</div>
       </main>
     </div>
@@ -191,9 +216,9 @@ function CollectionsSideSection() {
   const searchParams = useSearchParams();
   const activeId     = searchParams.get("collection") ?? undefined;
 
-  const [collections,  setCollections]  = useState<CollectionItem[]>([]);
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [loading,      setLoading]      = useState(true);
+  const [collections, setCollections] = useState<CollectionItem[]>([]);
+  const [showCreate,  setShowCreate]  = useState(false);
+  const [loading,     setLoading]     = useState(true);
 
   const refresh = () => {
     api.listCollections()
@@ -215,28 +240,25 @@ function CollectionsSideSection() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-3">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Section header */}
       <div className="flex items-center justify-between px-4 mb-1">
-        <div className="flex items-center gap-1.5">
-          <StackIcon className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-          <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-            Collections
-          </span>
-        </div>
+        <span className="text-[10.5px] font-medium tracking-widest uppercase
+                         text-zinc-400 dark:text-white/25">Collections</span>
         <button
           onClick={() => setShowCreate(true)}
           title="New collection"
-          className="p-1 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+          className="p-1 rounded-lg text-zinc-400 dark:text-white/30
+                     hover:text-violet-600 dark:hover:text-[#9B7BFF]
+                     hover:bg-violet-50 dark:hover:bg-[rgba(124,92,255,0.1)] transition-colors"
         >
           <PlusIcon className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto px-2.5 space-y-0.5 min-h-0">
+      <div className="flex-1 overflow-y-auto px-2 space-y-0.5 min-h-0">
 
-        {/* Inline create form — appears at top of list when + is clicked */}
+        {/* Inline create form */}
         {showCreate && (
           <InlineCreateForm
             onCreated={(col) => {
@@ -248,29 +270,28 @@ function CollectionsSideSection() {
             onCancel={() => setShowCreate(false)}
           />
         )}
-        {/* All library */}
+
+        {/* All saved */}
         <button
           onClick={() => navigate(undefined)}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all group ${
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all relative group ${
             !activeId
-              ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+              ? "bg-violet-50 dark:bg-[rgba(124,92,255,0.12)] text-violet-700 dark:text-[#F5F5F7]"
+              : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
           }`}
         >
-          <InboxStackIcon className={`h-4 w-4 shrink-0 ${!activeId ? "text-violet-500 dark:text-violet-400" : "text-zinc-400 dark:text-zinc-500"}`} />
-          <span className="flex-1 truncate text-left text-sm">All saved</span>
+          {!activeId && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                             bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+          )}
+          <InboxIcon className={`h-4 w-4 shrink-0 ${!activeId ? "text-violet-500 dark:text-[#9B7BFF]" : "text-zinc-400 dark:text-white/40"}`} />
+          <span className="flex-1 truncate text-left">All saved</span>
         </button>
 
         {loading ? (
-          <>
-            {[1, 2].map((i) => (
-              <div key={i} className="h-9 mx-1 rounded-xl skeleton" />
-            ))}
-          </>
+          <>{[1, 2].map((i) => <div key={i} className="h-9 mx-1 rounded-xl skeleton" />)}</>
         ) : collections.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500 italic">
-            No collections yet
-          </p>
+          <p className="px-3 py-2 text-xs text-zinc-400 dark:text-white/25 italic">No collections yet</p>
         ) : (
           collections.map((col) => (
             <CollectionRow
@@ -307,10 +328,8 @@ function CollectionRow({
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const menuRef  = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
   useEffect(() => {
     if (!showMenu) return;
     const h = (e: MouseEvent) => {
@@ -340,53 +359,62 @@ function CollectionRow({
     } catch { setDeleting(false); }
   };
 
-  const iconColor = COLOR_ICON[col.color] ?? COLOR_ICON.violet;
-  const iconBg    = COLOR_BG[col.color]   ?? COLOR_BG.violet;
+  const dotGrad = COL_GRAD[col.color] ?? COL_GRAD.violet;
 
   if (editing) {
     return (
       <div className="px-1">
         <input
-          ref={inputRef}
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={handleRename}
-          onKeyDown={(e) => { if (e.key === "Enter") handleRename(); if (e.key === "Escape") { setEditing(false); setName(col.name); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleRename();
+            if (e.key === "Escape") { setEditing(false); setName(col.name); }
+          }}
           disabled={renaming}
-          className="w-full px-3 py-2 text-sm rounded-xl bg-white dark:bg-zinc-900 border border-violet-400 dark:border-violet-500 outline-none text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
           maxLength={50}
+          className="w-full px-3 py-2 text-sm rounded-xl
+                     bg-white dark:bg-[#16161D]
+                     border border-violet-400 dark:border-[#7C5CFF]
+                     outline-none text-zinc-800 dark:text-[#F5F5F7] disabled:opacity-50"
         />
       </div>
     );
   }
 
   return (
-    <div className={`group/row relative flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all cursor-pointer ${
-      active
-        ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300"
-        : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
-    } ${deleting ? "opacity-40 pointer-events-none" : ""}`}
+    <div
+      className={`group/row relative flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all cursor-pointer ${
+        active
+          ? "bg-violet-50 dark:bg-[rgba(124,92,255,0.12)] text-violet-700 dark:text-[#F5F5F7]"
+          : "text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+      } ${deleting ? "opacity-40 pointer-events-none" : ""}`}
       onClick={onSelect}
     >
-      {/* Stack icon badge — colored per collection */}
-      <div className={`shrink-0 h-6 w-6 rounded-md flex items-center justify-center ${iconBg}`}>
-        {col.emoji && col.emoji !== "brain" ? (
-          <span className="text-sm leading-none">{col.emoji}</span>
-        ) : (
-          <StackIcon className={`h-3.5 w-3.5 ${iconColor}`} />
-        )}
-      </div>
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4
+                         bg-violet-600 dark:bg-[#7C5CFF] rounded-r-full" />
+      )}
 
-      <span className="flex-1 truncate text-sm font-medium">{col.name}</span>
+      {/* Gradient color dot */}
+      <span
+        className="shrink-0 h-2 w-2 rounded-[3px]"
+        style={{ background: dotGrad }}
+      />
+
+      <span className="flex-1 truncate text-[13px] font-medium">{col.name}</span>
 
       {col.itemCount > 0 && (
-        <span className={`text-xs tabular-nums shrink-0 ${active ? "text-violet-500/70 dark:text-violet-400/70" : "text-zinc-400 dark:text-zinc-500"}`}>
+        <span className={`font-mono text-[11px] shrink-0 tabular-nums ${
+          active ? "text-violet-500/70 dark:text-[#9B7BFF]/70" : "text-zinc-400 dark:text-white/30"
+        }`}>
           {col.itemCount}
         </span>
       )}
 
-      {/* ⋯ menu — appears on row hover */}
+      {/* ⋯ menu */}
       <div
         className="relative shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity"
         ref={menuRef}
@@ -394,22 +422,28 @@ function CollectionRow({
       >
         <button
           onClick={() => setShowMenu((v) => !v)}
-          className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          title="Options"
+          className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/[0.08] transition-colors"
         >
           <DotsIcon className="h-3.5 w-3.5" />
         </button>
         {showMenu && (
-          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+          <div className="absolute right-0 top-full mt-1 w-36
+                          bg-white dark:bg-[#1C1C25]
+                          border border-zinc-200 dark:border-white/[0.08]
+                          rounded-xl shadow-lg z-50 overflow-hidden py-1">
             <button
               onClick={() => { setShowMenu(false); setEditing(true); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs
+                         text-zinc-700 dark:text-white/70
+                         hover:bg-zinc-50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <PencilIcon className="h-3.5 w-3.5" /> Rename
             </button>
             <button
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs
+                         text-red-600 dark:text-red-400
+                         hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               <TrashIcon className="h-3.5 w-3.5" /> Delete
             </button>
@@ -446,10 +480,11 @@ function InlineCreateForm({
 
   return (
     <div className="px-1 pb-0.5">
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30">
-        <div className="shrink-0 h-6 w-6 rounded-md flex items-center justify-center bg-violet-100 dark:bg-violet-500/20">
-          <StackIcon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
-        </div>
+      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl
+                      bg-violet-50 dark:bg-[rgba(124,92,255,0.10)]
+                      border border-violet-200 dark:border-[rgba(124,92,255,0.25)]">
+        <span className="shrink-0 h-2 w-2 rounded-[3px]"
+              style={{ background: "linear-gradient(135deg,#7C3AED,#A78BFA)" }} />
         <input
           ref={inputRef}
           type="text"
@@ -463,7 +498,10 @@ function InlineCreateForm({
           onBlur={() => { if (!saving) submit(); }}
           disabled={saving}
           maxLength={50}
-          className="flex-1 min-w-0 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 outline-none disabled:opacity-50"
+          className="flex-1 min-w-0 bg-transparent text-sm
+                     text-zinc-800 dark:text-[#F5F5F7]
+                     placeholder-zinc-400 dark:placeholder-white/30
+                     outline-none disabled:opacity-50"
         />
       </div>
     </div>
@@ -472,66 +510,93 @@ function InlineCreateForm({
 
 function CollectionsSkeleton() {
   return (
-    <div className="px-2.5 py-3 space-y-1">
+    <div className="px-2 py-1 space-y-1">
       {[1, 2].map((i) => <div key={i} className="h-9 rounded-xl skeleton" />)}
     </div>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function Avatar({ name, image, size }: { name: string; image?: string; size: number }) {
+function Avatar({ name, image, initials, size }: { name: string; image?: string; initials: string; size: number }) {
   const style = { width: size, height: size };
   if (image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={image} alt={name} style={style} className="rounded-full object-cover ring-2 ring-violet-500/30 shrink-0" />;
+    return <img src={image} alt={name} style={style}
+                className="rounded-full object-cover ring-2 ring-violet-500/20 shrink-0" />;
   }
   return (
-    <div style={style} className="rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0" aria-hidden>
-      <span style={{ fontSize: size * 0.42 }}>{name.charAt(0).toUpperCase()}</span>
+    <div style={{ ...style, fontSize: size * 0.38 }}
+         className="rounded-full bg-gradient-to-br from-amber-400 to-pink-500
+                    flex items-center justify-center text-white font-semibold shrink-0
+                    shadow-sm ring-1 ring-black/5"
+         aria-hidden>
+      {initials}
     </div>
   );
 }
 
-function BrainIcon({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></svg>;
-}
-function LibraryIcon({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>;
-}
-function SearchIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
-}
-function UserIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
-}
-function SparkleIcon({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L13.4 8.4L19 9L13.4 9.6L12 15L10.6 9.6L5 9L10.6 8.4L12 3Z" /><path opacity="0.5" d="M19 14L19.8 16.8L23 17L19.8 17.2L19 20L18.2 17.2L15 17L18.2 16.8L19 14Z" /><path opacity="0.5" d="M5 14L5.8 16.8L9 17L5.8 17.2L5 20L4.2 17.2L1 17L4.2 16.8L5 14Z" /></svg>;
-}
-function SunIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
-}
-function MoonIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>;
+// ─── Logo mark ────────────────────────────────────────────────────────────────
+
+function LogoMark({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className="shrink-0">
+      <defs>
+        <linearGradient id="lm-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#9B7BFF" />
+          <stop offset="100%" stopColor="#5B3FD9" />
+        </linearGradient>
+        <linearGradient id="lm-shine" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.20)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#lm-g)" />
+      <rect width="32" height="32" rx="8" fill="url(#lm-shine)" />
+      <path
+        d="M10 7L10 25M10 7C17 7 22 9.5 22 13C22 15 20.5 16 18 16C21 16 23 17.5 23 20C23 23 19 25 10 25"
+        stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+      />
+      <circle cx="10" cy="16" r="1.4" fill="white" />
+    </svg>
+  );
 }
 
-// Modern "stack/layers" icon for Collections section header
-function StackIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.25 2.25 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg>;
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function LibraryIcon({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20"/></svg>;
+}
+function SparkleIcon({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L13.4 8.4L19 9L13.4 9.6L12 15L10.6 9.6L5 9L10.6 8.4L12 3Z"/><path opacity=".45" d="M19 14L19.8 16.8L23 17L19.8 17.2L19 20L18.2 17.2L15 17L18.2 16.8L19 14ZM5 14L5.8 16.8L9 17L5.8 17.2L5 20L4.2 17.2L1 17L4.2 16.8L5 14Z"/></svg>;
+}
+function UserIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>;
+}
+function SearchIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>;
+}
+function SunIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>;
+}
+function MoonIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>;
 }
 function PlusIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>;
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>;
 }
 function DotsIcon({ className }: { className?: string }) {
   return <svg className={className} fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>;
 }
 function PencilIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>;
 }
 function TrashIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>;
 }
-// "All saved" icon — inbox with down arrow (Heroicons inbox-stack)
-function InboxStackIcon({ className }: { className?: string }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7.875 14.25l1.214 1.942a2.25 2.25 0 001.908 1.058h2.006c.776 0 1.497-.4 1.908-1.058l1.214-1.942M2.41 9h4.636a2.25 2.25 0 011.872 1.002l.164.246a2.25 2.25 0 001.872 1.002h2.092a2.25 2.25 0 001.872-1.002l.164-.246A2.25 2.25 0 0116.954 9h4.636M2.41 9a2.25 2.25 0 00-.16.832V12a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.832c0-.287-.055-.57-.16-.832M2.41 9a2.25 2.25 0 01.382-.632l3.285-3.832a2.25 2.25 0 011.708-.786h8.43c.657 0 1.281.287 1.709.786l3.284 3.832c.163.19.291.404.382.632M4.5 20.25h15A2.25 2.25 0 0021.75 18v-2.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125V18a2.25 2.25 0 002.25 2.25z" /></svg>;
+function InboxIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7.875 14.25l1.214 1.942a2.25 2.25 0 001.908 1.058h2.006c.776 0 1.497-.4 1.908-1.058l1.214-1.942M2.41 9h4.636a2.25 2.25 0 011.872 1.002l.164.246a2.25 2.25 0 001.872 1.002h2.092a2.25 2.25 0 001.872-1.002l.164-.246A2.25 2.25 0 0116.954 9h4.636M2.41 9a2.25 2.25 0 00-.16.832V12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 12V9.832c0-.287-.055-.57-.16-.832M2.41 9a2.25 2.25 0 01.382-.632l3.285-3.832a2.25 2.25 0 011.708-.786h8.43c.657 0 1.281.287 1.709.786l3.284 3.832c.163.19.291.404.382.632M4.5 20.25h15A2.25 2.25 0 0021.75 18v-2.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125V18a2.25 2.25 0 002.25 2.25z"/></svg>;
+}
+function ChevronIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9"/></svg>;
 }
