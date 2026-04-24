@@ -1,5 +1,6 @@
 /**
  * GET    /api/content/[id]  – full content item with metadata
+ * PATCH  /api/content/[id]  – update mutable fields (notes)
  * DELETE /api/content/[id]  – remove from MongoDB + Atlas vectors + chat sessions
  */
 
@@ -44,6 +45,44 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ content });
   } catch (err) {
     console.error("[GET /api/content/[id]]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// ─── PATCH ────────────────────────────────────────────────────────────────────
+
+export async function PATCH(req: NextRequest, { params }: Params) {
+  try {
+    const session = await auth();
+    const userId  = (session?.user as { id?: string } | undefined)?.id;
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+    if (!mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+
+    let body: { notes?: string };
+    try { body = await req.json(); } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    // Only `notes` is user-editable here (title changes go through /api/note/[id])
+    const notes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : "";
+
+    await connectDB();
+
+    const updated = await Content.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(id), userId: new mongoose.Types.ObjectId(userId) },
+      { notes },
+      { returnDocument: "after" }
+    ).select("_id notes").lean() as { _id: mongoose.Types.ObjectId; notes?: string } | null;
+
+    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    return NextResponse.json({ success: true, notes: updated.notes ?? "" });
+  } catch (err) {
+    console.error("[PATCH /api/content/[id]]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

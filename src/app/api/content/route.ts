@@ -76,55 +76,70 @@ export async function POST(req: NextRequest) {
     // Detect + extract
     const { contentType, platform } = detectUrl(url);
 
-    let extracted;
+    let extracted: Awaited<ReturnType<typeof ExtractorFactory.extract>> | null = null;
+    let extractionFailed = false;
+    let extractionError  = "";
+
     try {
       extracted = await ExtractorFactory.extract(url);
     } catch (err) {
-      return NextResponse.json(
-        { error: "Extraction failed", details: String(err) },
-        { status: 422 }
-      );
+      // Site blocked the scraper (bot-protection, login wall, JS-only SPA, etc.)
+      // Save the URL anyway with minimal fallback info so it shows up in the library.
+      // The card will show the site favicon and "failed" status badge.
+      extractionFailed = true;
+      extractionError  = String(err);
+      console.warn("[Content] Extraction failed for", url, "–", extractionError);
     }
 
+    // Build the data we'll actually persist
+    const hostname = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } })();
+    const title       = extracted?.title       ?? hostname;
+    const description = extracted?.description ?? "";
+    const rawText     = extracted?.rawText     ?? "";
+    const thumbnail   = extracted?.thumbnail;
+    const author      = extracted?.author;
+    const publishedAt = extracted?.publishedAt;
+    const metadata    = (extracted?.metadata   ?? {}) as Record<string, unknown>;
+
     const threshold   = parseInt(process.env.LARGE_CONTENT_THRESHOLD ?? "10000", 10);
-    const contentSize = extracted.rawText.length > threshold
-      ? ContentSize.LARGE
-      : ContentSize.SMALL;
+    const contentSize = rawText.length > threshold ? ContentSize.LARGE : ContentSize.SMALL;
 
     const content = await Content.create({
       userId:          new mongoose.Types.ObjectId(userId),
       url,
       contentType,
       platform,
-      title:           extracted.title,
-      description:     extracted.description,
-      thumbnail:       extracted.thumbnail,
-      author:          extracted.author,
-      publishedAt:     extracted.publishedAt,
-      rawText:         extracted.rawText,
-      rawTextLength:   extracted.rawText.length,
-      // Cast to satisfy Mongoose Mixed field
-      metadata:        extracted.metadata as Record<string, unknown>,
+      title,
+      description,
+      thumbnail,
+      author,
+      publishedAt,
+      rawText,
+      rawTextLength:   rawText.length,
+      metadata,
       contentSize,
       tags:            tags ?? [],
       notes,
-      processingStatus: ProcessingStatus.PENDING,
+      processingStatus: extractionFailed ? ProcessingStatus.FAILED  : ProcessingStatus.PENDING,
+      processingError:  extractionFailed ? extractionError           : undefined,
     });
 
-    // Kick off async embedding — return immediately
-    getEmbeddingService()
-      .indexContent(
-        content._id as mongoose.Types.ObjectId,
-        new mongoose.Types.ObjectId(userId),
-        extracted
-      )
-      .catch((err: unknown) => {
-        console.error("[Embedding] Failed for", content._id, err);
-        Content.findByIdAndUpdate(content._id, {
-          processingStatus: ProcessingStatus.FAILED,
-          processingError:  String(err),
-        }).exec();
-      });
+    // Kick off async embedding only when we have actual text to index
+    if (!extractionFailed && extracted) {
+      getEmbeddingService()
+        .indexContent(
+          content._id as mongoose.Types.ObjectId,
+          new mongoose.Types.ObjectId(userId),
+          extracted
+        )
+        .catch((err: unknown) => {
+          console.error("[Embedding] Failed for", content._id, err);
+          Content.findByIdAndUpdate(content._id, {
+            processingStatus: ProcessingStatus.FAILED,
+            processingError:  String(err),
+          }).exec();
+        });
+    }
 
     return NextResponse.json(
       {

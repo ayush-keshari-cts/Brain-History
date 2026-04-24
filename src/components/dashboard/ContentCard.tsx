@@ -153,6 +153,7 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favLoading,      setFavLoading]      = useState(false);
   const [isPlaying,       setIsPlaying]       = useState(false);
+  const [faviconFailed,   setFaviconFailed]   = useState(false);
 
   const handleDeleteConfirm = async () => {
     setDeleting(true);
@@ -182,6 +183,13 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
 
   const playInfo   = getPlayableInfo(item);
   const isUploaded = item.platform === "upload";
+
+  // Show the site's favicon as the banner for URL-based content that has no OG thumbnail.
+  // Covers: blog, website, reddit, linkedin, tweet, instagram, tiktok, unknown.
+  // Excludes: uploaded files, media types that already have branded icons (YouTube, Spotify, audio, video, pdf, image, note, github).
+  const FAVICON_TYPES = new Set(["blog", "website", "reddit", "linkedin", "tweet", "instagram", "tiktok", "unknown"]);
+  const showFaviconBanner = !item.thumbnail && !isUploaded && FAVICON_TYPES.has(item.contentType) && !faviconFailed;
+  const faviconHostname   = (() => { try { return new URL(item.url).hostname; } catch { return ""; } })();
   const URL_DOWNLOADABLE = ["image", "screenshot", "pdf"];
   const canDownloadUrl = !isUploaded && URL_DOWNLOADABLE.includes(item.contentType);
   const downloadHref = isUploaded && item.fileUrl
@@ -279,6 +287,24 @@ export default function ContentCard({ item, onDeleted, onUpdated }: Props) {
             {item.thumbnail ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.thumbnail} alt="" className="w-full h-36 object-cover" />
+            ) : showFaviconBanner ? (
+              /* Favicon banner — shows the real site logo for blogs / generic websites */
+              <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
+                <div className="absolute inset-0 dot-bg opacity-20" />
+                {/* Site logo box */}
+                <div className="relative z-10 h-14 w-14 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 shadow-md flex items-center justify-center overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${faviconHostname}&sz=128`}
+                    alt=""
+                    className="h-10 w-10 object-contain"
+                    onError={() => setFaviconFailed(true)}
+                  />
+                </div>
+                <span className="relative z-10 text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
+                  {domain}
+                </span>
+              </div>
             ) : (
               <div className={`w-full h-36 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br ${tc.grad} bg-zinc-50 dark:bg-zinc-800/60`}>
                 {/* Subtle dot pattern */}

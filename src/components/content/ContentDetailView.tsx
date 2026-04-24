@@ -60,8 +60,26 @@ export default function ContentDetailView({ content }: { content: Record<string,
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [favourite,       setFavourite]       = useState<boolean>(Boolean(content.isFavourite));
   const [favLoading,      setFavLoading]      = useState(false);
-  // For notes: keep card title in local state so it updates instantly on save
+  // For note-type content: keep title in local state so header updates immediately after edit
   const [noteTitleOverride, setNoteTitleOverride] = useState<string | null>(null);
+
+  // Personal notes — editable for every content type
+  const [notesText,    setNotesText]    = useState<string>((content.notes as string | undefined) ?? "");
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesSaving,  setNotesSaving]  = useState(false);
+
+  const handleSaveNotes = async () => {
+    setNotesSaving(true);
+    try {
+      const res = await api.updateNotes(content._id as string, notesText);
+      setNotesText(res.notes);
+      setEditingNotes(false);
+    } catch {
+      alert("Could not save note.");
+    } finally {
+      setNotesSaving(false);
+    }
+  };
 
   const isUploaded = content.platform === "upload";
   const hasFile    = Boolean(content.fileUrl);
@@ -273,11 +291,61 @@ export default function ContentDetailView({ content }: { content: Record<string,
         </div>
       )}
 
-      {/* Notes */}
-      {content.notes && (
-        <div className="rounded-2xl p-4 space-y-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Notes</p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{content.notes}</p>
+      {/* Notes — editable for every content type */}
+      {content.contentType !== "note" && (
+        <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+          {editingNotes ? (
+            <div className="p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Personal Note</p>
+              <textarea
+                value={notesText}
+                onChange={(e) => setNotesText(e.target.value)}
+                placeholder="Add a personal note about this content…"
+                maxLength={2000}
+                rows={4}
+                autoFocus
+                className="w-full px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl resize-none outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 dark:focus:border-violet-500 transition-all font-[inherit]"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveNotes}
+                  disabled={notesSaving}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                >
+                  {notesSaving ? "Saving…" : "Save"}
+                </button>
+                <button
+                  onClick={() => { setEditingNotes(false); setNotesText((content.notes as string | undefined) ?? ""); }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">{notesText.length}/2000</span>
+              </div>
+            </div>
+          ) : notesText ? (
+            <div className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Personal Note</p>
+                <button
+                  onClick={() => setEditingNotes(true)}
+                  className="p-1 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  title="Edit note"
+                >
+                  <PencilIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{notesText}</p>
+            </div>
+          ) : (
+            <button
+              onClick={() => setEditingNotes(true)}
+              className="w-full p-4 flex items-center gap-2.5 text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left"
+            >
+              <PencilIcon className="h-4 w-4 shrink-0" />
+              Add a personal note…
+            </button>
+          )}
         </div>
       )}
 

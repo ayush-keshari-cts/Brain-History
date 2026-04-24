@@ -107,6 +107,12 @@ export const api = {
   toggleFavourite: (id: string) =>
     apiFetch<{ isFavourite: boolean }>(`/api/content/${id}/favourite`, { method: "PATCH" }),
 
+  /** Update the personal note attached to any saved content */
+  updateNotes: (id: string, notes: string) =>
+    apiFetch<{ success: boolean; notes: string }>(
+      `/api/content/${id}`, { method: "PATCH", body: JSON.stringify({ notes }) }
+    ),
+
   /** Run semantic search */
   search: (query: string, contentTypes?: string[], limit = 10) =>
     apiFetch<SearchResponse>("/api/search", {

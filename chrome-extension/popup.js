@@ -77,8 +77,8 @@ async function init() {
     urlDisplay.textContent = shortenUrl(currentTabUrl);
     urlDisplay.title = currentTabUrl;
   }
-  const titleInput = $("input-title");
-  if (titleInput) titleInput.value = pageTitle;
+  // pageTitle is used only for the saved-success display; the server extracts its own title
+  window._tabTitle = pageTitle;
 
   const favicon = $("favicon");
   if (favicon && currentTabUrl) {
@@ -117,7 +117,6 @@ async function init() {
 // ─── Save ─────────────────────────────────────────────────────────────────────
 async function handleSave() {
   const url   = currentTabUrl;
-  const title = ($("input-title")?.value ?? "").trim();
   const tagsRaw = ($("input-tags")?.value ?? "").trim();
   const notes = ($("input-notes")?.value ?? "").trim();
   const tags  = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
@@ -144,7 +143,7 @@ async function handleSave() {
 
     if (res.ok && (data.success || data.contentId)) {
       const savedTitle = $("saved-title");
-      if (savedTitle) savedTitle.textContent = data.title || title || url;
+      if (savedTitle) savedTitle.textContent = data.title || window._tabTitle || url;
       showOnly("saved");
     } else {
       // Possible duplicate or extraction failure — still mostly a success UX
@@ -192,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Save another — reset form and re-init for current tab
   $("save-another-btn")?.addEventListener("click", () => {
-    $("input-title").value = "";
     $("input-tags").value  = "";
     $("input-notes").value = "";
     resetSaveBtn();
@@ -206,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Allow Cmd/Ctrl + Enter to save from any field
-  ["input-title", "input-tags", "input-notes"].forEach((id) => {
+  ["input-tags", "input-notes"].forEach((id) => {
     $(id)?.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSave();
     });
