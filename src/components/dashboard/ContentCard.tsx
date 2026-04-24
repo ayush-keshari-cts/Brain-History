@@ -29,7 +29,7 @@ const STATUS_CONFIG = {
   pending:    { dot: "bg-amber-400 animate-pulse",  badge: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" },
   processing: { dot: "bg-blue-400 animate-pulse",   badge: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
   completed:  { dot: "bg-emerald-400",              badge: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
-  failed:     { dot: "bg-red-400",                  badge: "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  failed:     { dot: "bg-zinc-400",                 badge: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700" },
 } as const;
 
 // Type-specific large icons for placeholder banners
@@ -320,10 +320,10 @@ export default function ContentCard({
         {isPlaying && playInfo ? (
           /* ── Inline player ── */
           <div className="relative w-full bg-black">
-            {/* Close button */}
+            {/* Close button — left side, opposite the favourite button */}
             <button
               onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
-              className="absolute top-1.5 right-1.5 z-10 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+              className="absolute top-1.5 left-1.5 z-10 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
               title="Close player"
             >
               <XIcon className="h-3.5 w-3.5" />
@@ -461,7 +461,7 @@ export default function ContentCard({
           {item.processingStatus !== "completed" && (
             <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${sc.badge}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
-              {item.processingStatus}
+              {item.processingStatus === "failed" ? "Original" : item.processingStatus}
             </span>
           )}
           {item.processingStatus === "completed" && (item.embeddingsCount ?? 0) > 0 && (
@@ -482,7 +482,7 @@ export default function ContentCard({
         <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-white/[0.06]">
           <span className="text-xs text-zinc-400 dark:text-zinc-500">{dateStr}</span>
           <div className="flex items-center gap-0.5">
-            {!isUploaded && (
+            {!isUploaded && item.contentType !== "note" && (
               <a href={item.url} target="_blank" rel="noopener noreferrer"
                 className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 title="Open original">

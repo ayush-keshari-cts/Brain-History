@@ -29,7 +29,7 @@ const STATUS_CONFIG: Record<string, { dot: string; badge: string }> = {
   pending:    { dot: "bg-amber-400 animate-pulse",  badge: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" },
   processing: { dot: "bg-blue-400 animate-pulse",   badge: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" },
   completed:  { dot: "bg-emerald-400",              badge: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" },
-  failed:     { dot: "bg-red-400",                  badge: "bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20" },
+  failed:     { dot: "bg-zinc-400",                 badge: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700" },
 };
 
 // Extract YouTube video ID from any YouTube URL
@@ -231,7 +231,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
         <div className="flex flex-wrap gap-2">
           <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${sc.badge}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
-            {content.processingStatus}
+            {content.processingStatus === "failed" ? "original" : content.processingStatus}
           </span>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize border ${tc.badge}`}>
             {(content.contentType as string)?.replace(/_/g, " ")}
@@ -246,7 +246,7 @@ export default function ContentDetailView({ content }: { content: Record<string,
               uploaded
             </span>
           )}
-          {content.embeddingsCount > 0 && (
+          {isCompleted && content.embeddingsCount > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
               {content.embeddingsCount} chunks
             </span>
@@ -282,14 +282,6 @@ export default function ContentDetailView({ content }: { content: Record<string,
           </div>
         )}
       </div>
-
-      {/* Processing error */}
-      {content.processingStatus === "failed" && content.processingError && (
-        <div className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
-          <span className="h-2 w-2 rounded-full bg-red-400 shrink-0 mt-0.5" />
-          <div><strong className="font-semibold">Indexing failed:</strong> {content.processingError}</div>
-        </div>
-      )}
 
       {/* Notes — editable for every content type */}
       {content.contentType !== "note" && (
