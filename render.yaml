@@ -9,3 +9,5 @@ services:
         value: production
       - key: NODE_VERSION
         value: 20.x
+      - key: AUTH_TRUST_HOST
+        value: "true"
