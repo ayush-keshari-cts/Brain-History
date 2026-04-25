@@ -1,7 +1,7 @@
 services:
   - type: web
     name: brain-history
-    env: node
+    runtime: node
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
     envVars:
